@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.se.ifmo.is1.dto.organization.OrganizationCreateDTO;
 import ru.se.ifmo.is1.dto.organization.OrganizationViewDTO;
+import ru.se.ifmo.is1.dto.paging.PageRequestDTO;
+import ru.se.ifmo.is1.dto.paging.PageResponseDTO;
 import ru.se.ifmo.is1.mapper.OrganizationMapper;
 import ru.se.ifmo.is1.model.Address;
 import ru.se.ifmo.is1.model.Location;
@@ -25,9 +27,13 @@ public class OrganizationService {
     }
 
     @Transactional(readOnly = true)
-    public List<OrganizationViewDTO> list() {
-        return repo.findAll().stream().map(mapper::toView).toList();
+    public PageResponseDTO<OrganizationViewDTO> list(PageRequestDTO pr){
+        var items = repo.findPageNative(pr.offset(), pr.getSize(), pr.getSort(), pr.getDir())
+                .stream().map(mapper::toView).toList();
+        long total = repo.countAllNative();
+        return PageResponseDTO.of(items, pr.getPage(), pr.getSize(), total, pr.getSort(), pr.getDir());
     }
+
 
 
 

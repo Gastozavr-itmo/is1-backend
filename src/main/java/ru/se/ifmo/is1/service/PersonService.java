@@ -3,6 +3,8 @@ package ru.se.ifmo.is1.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.se.ifmo.is1.dto.paging.PageRequestDTO;
+import ru.se.ifmo.is1.dto.paging.PageResponseDTO;
 import ru.se.ifmo.is1.dto.person.PersonCreateDTO;
 import ru.se.ifmo.is1.dto.person.PersonViewFullDTO;
 import ru.se.ifmo.is1.mapper.PersonMapper;
@@ -24,8 +26,11 @@ public class PersonService {
     }
 
     @Transactional(readOnly = true)
-    public List<PersonViewFullDTO> list() {
-        return repo.findAll().stream().map(mapper::toView).toList();
+    public PageResponseDTO<PersonViewFullDTO> list(PageRequestDTO pr) {
+        var items = repo.findPageNative(pr.offset(), pr.getSize(), pr.getSort(), pr.getDir())
+                .stream().map(mapper::toView).toList();
+        long total = repo.countAllNative();
+        return PageResponseDTO.of(items, pr.getPage(), pr.getSize(), total, pr.getSort(), pr.getDir());
     }
 
     @Transactional
@@ -64,4 +69,5 @@ public class PersonService {
                 throw new IllegalArgumentException("location.name required");
         }
     }
+
 }

@@ -3,6 +3,8 @@ package ru.se.ifmo.is1.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.se.ifmo.is1.dto.paging.PageRequestDTO;
+import ru.se.ifmo.is1.dto.paging.PageResponseDTO;
 import ru.se.ifmo.is1.dto.product.ProductCreateDTO;
 import ru.se.ifmo.is1.dto.product.ProductViewDTO;
 import ru.se.ifmo.is1.mapper.ProductMapper;
@@ -10,7 +12,6 @@ import ru.se.ifmo.is1.model.Coordinates;
 import ru.se.ifmo.is1.model.Product;
 import ru.se.ifmo.is1.repository.ProductRepository;
 
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -24,9 +25,13 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProductViewDTO> list() {
-        return repo.findAll().stream().map(mapper::toView).toList();
+    public PageResponseDTO<ProductViewDTO> list(PageRequestDTO pr){
+        var items = repo.findPageNative(pr.offset(), pr.getSize(), pr.getSort(), pr.getDir())
+                .stream().map(mapper::toView).toList();
+        long total = repo.countAllNative();
+        return PageResponseDTO.of(items, pr.getPage(), pr.getSize(), total, pr.getSort(), pr.getDir());
     }
+
 
     @Transactional
     public Long create(ProductCreateDTO dto) {

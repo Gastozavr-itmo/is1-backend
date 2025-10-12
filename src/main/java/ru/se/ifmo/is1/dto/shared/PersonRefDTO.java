@@ -1,8 +1,10 @@
 package ru.se.ifmo.is1.dto.shared;
 
-import lombok.Value;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Value
+@Data
+@NoArgsConstructor
 public class PersonRefDTO {
     Long id;
 }

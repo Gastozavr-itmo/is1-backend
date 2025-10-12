@@ -5,9 +5,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.se.ifmo.is1.dto.organization.OrganizationCreateDTO;
 import ru.se.ifmo.is1.dto.organization.OrganizationViewDTO;
+import ru.se.ifmo.is1.dto.paging.PageRequestDTO;
+import ru.se.ifmo.is1.dto.paging.PageResponseDTO;
 import ru.se.ifmo.is1.service.OrganizationService;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/organization")
@@ -22,9 +23,15 @@ public class OrganizationController {
     }
 
     @GetMapping
-    public List<OrganizationViewDTO> list() {
-        return service.list();
+    public PageResponseDTO<OrganizationViewDTO> list(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size,
+            @RequestParam(name = "sort", defaultValue = "id") String sort,
+            @RequestParam(name = "dir",  defaultValue = "asc") String dir
+    ) {
+        return service.list(new PageRequestDTO(page, size, sort, dir));
     }
+
 
     @PostMapping
     public ResponseEntity<Integer> create(@RequestBody OrganizationCreateDTO dto) {
