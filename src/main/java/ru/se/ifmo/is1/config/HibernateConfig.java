@@ -31,8 +31,11 @@ public class HibernateConfig {
         LocalSessionFactoryBean sf = new LocalSessionFactoryBean();
         sf.setDataSource(ds);
         sf.setMappingLocations(
-                new ClassPathResource("mapping/Coordinates.hbm.xml")
+                new ClassPathResource("mapping/Product.hbm.xml"),
+                new ClassPathResource("mapping/Organization.hbm.xml"),
+                new ClassPathResource("mapping/Person.hbm.xml")
         );
+
         Properties p = new Properties();
         p.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
         p.put("hibernate.show_sql", "true");

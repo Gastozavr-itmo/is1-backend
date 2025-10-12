@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping package="ru.se.ifmo.is1.model">
+
+    <class name="Product" table="product">
+        <id name="id" type="long">
+            <column name="id"/>
+            <generator class="identity"/>
+        </id>
+
+        <property name="name" type="string" not-null="true">
+            <column name="name"/>
+        </property>
+
+        <!-- Coordinates как component (инлайн-колонки) -->
+        <component name="coordinates" class="Coordinates">
+            <property name="x" type="double" not-null="true">
+                <column name="coordinates_x"/>
+            </property>
+            <property name="y" type="long" not-null="true">
+                <column name="coordinates_y"/>
+            </property>
+        </component>
+
+        <property name="creationDate" type="timestamp" not-null="true" insert="false" update="false">
+            <column name="creation_date"/>
+        </property>
+
+        <property name="unitOfMeasure" not-null="true">
+            <column name="unit_of_measure"/>
+            <type name="org.hibernate.type.EnumType">
+                <param name="enumClass">ru.se.ifmo.is1.model.UnitOfMeasure</param>
+                <param name="useNamed">true</param>
+            </type>
+        </property>
+
+        <!-- производитель как FK на organization -->
+        <many-to-one name="manufacturer" class="Organization"
+                     column="manufacturer_id" not-null="true" fetch="select"/>
+
+        <property name="price" type="long" not-null="true">
+            <column name="price"/>
+        </property>
+
+        <property name="manufactureCost" type="int">
+            <column name="manufacture_cost"/>
+        </property>
+
+        <property name="rating" type="long" not-null="true">
+            <column name="rating"/>
+        </property>
+
+        <property name="partNumber" type="string" not-null="true">
+            <column name="part_number"/>
+        </property>
+
+        <!-- владелец как FK на person (опционально) -->
+        <many-to-one name="owner" class="Person"
+                     column="owner_id" not-null="false" fetch="select"/>
+    </class>
+
+</hibernate-mapping>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping package="ru.se.ifmo.is1.model">
+
+    <class name="Organization" table="organization">
+        <id name="id" type="int">
+            <column name="id"/>
+            <generator class="identity"/>
+        </id>
+
+        <property name="name" type="string" not-null="true">
+            <column name="name"/>
+        </property>
+
+        <property name="annualTurnover" type="double" not-null="true">
+            <column name="annual_turnover"/>
+        </property>
+
+        <property name="employeesCount" type="int" not-null="true">
+            <column name="employees_count"/>
+        </property>
+
+        <property name="fullName" type="string">
+            <column name="full_name" length="1950" unique="true"/>
+        </property>
+
+        <property name="rating" type="int" not-null="true">
+            <column name="rating"/>
+        </property>
+
+        <!-- officialAddress как component + вложенный component town -->
+        <component name="officialAddress" class="Address">
+            <property name="zipCode" type="string" not-null="true">
+                <column name="official_zip_code" length="29"/>
+            </property>
+            <component name="town" class="Location">
+                <property name="x" type="long" not-null="true">
+                    <column name="official_town_x"/>
+                </property>
+                <property name="y" type="long" not-null="true">
+                    <column name="official_town_y"/>
+                </property>
+                <property name="name" type="string" not-null="true">
+                    <column name="official_town_name"/>
+                </property>
+            </component>
+        </component>
+
+        <!-- postalAddress как component + вложенный component town -->
+        <component name="postalAddress" class="Address">
+            <property name="zipCode" type="string" not-null="true">
+                <column name="postal_zip_code" length="29"/>
+            </property>
+            <component name="town" class="Location">
+                <property name="x" type="long" not-null="true">
+                    <column name="postal_town_x"/>
+                </property>
+                <property name="y" type="long" not-null="true">
+                    <column name="postal_town_y"/>
+                </property>
+                <property name="name" type="string" not-null="true">
+                    <column name="postal_town_name"/>
+                </property>
+            </component>
+        </component>
+    </class>
+
+</hibernate-mapping>

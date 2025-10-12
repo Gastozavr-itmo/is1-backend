@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping package="ru.se.ifmo.is1.model">
+
+    <class name="Person" table="person">
+        <id name="id" type="long">
+            <column name="id"/>
+            <generator class="identity"/>
+        </id>
+
+        <property name="name" type="string" not-null="true">
+            <column name="name"/>
+        </property>
+
+        <property name="eyeColor">
+            <column name="eye_color"/>
+            <type name="org.hibernate.type.EnumType">
+                <param name="enumClass">ru.se.ifmo.is1.model.Color</param>
+                <param name="useNamed">true</param>
+            </type>
+        </property>
+
+        <property name="hairColor">
+            <column name="hair_color"/>
+            <type name="org.hibernate.type.EnumType">
+                <param name="enumClass">ru.se.ifmo.is1.model.Color</param>
+                <param name="useNamed">true</param>
+            </type>
+        </property>
+
+        <component name="location" class="Location">
+            <property name="x" type="long">
+                <column name="loc_x"/>
+            </property>
+            <property name="y" type="long">
+                <column name="loc_y"/>
+            </property>
+            <property name="name" type="string">
+                <column name="loc_name"/>
+            </property>
+        </component>
+
+        <property name="height" type="double" not-null="true">
+            <column name="height"/>
+        </property>
+
+        <property name="nationality" not-null="true">
+            <column name="nationality"/>
+            <type name="org.hibernate.type.EnumType">
+                <param name="enumClass">ru.se.ifmo.is1.model.Country</param>
+                <param name="useNamed">true</param>
+            </type>
+        </property>
+    </class>
+
+</hibernate-mapping>
