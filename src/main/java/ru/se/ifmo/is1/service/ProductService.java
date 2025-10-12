@@ -25,12 +25,21 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponseDTO<ProductViewDTO> list(PageRequestDTO pr){
-        var items = repo.findPageNative(pr.offset(), pr.getSize(), pr.getSort(), pr.getDir())
-                .stream().map(mapper::toView).toList();
-        long total = repo.countAllNative();
-        return PageResponseDTO.of(items, pr.getPage(), pr.getSize(), total, pr.getSort(), pr.getDir());
+    public PageResponseDTO<ru.se.ifmo.is1.dto.product.ProductViewDTO> list(
+            int page, int size, String sort, String dir,
+            String name, String partNumber, String unitOfMeasureLike,
+            String organizationName, String personName
+    ) {
+        int offset = Math.max(page, 0) * Math.max(size, 1);
+
+        var rows  = repo.findFiltered(name, partNumber, unitOfMeasureLike, organizationName, personName,
+                offset, size, sort, dir);
+        long total = repo.countFiltered(name, partNumber, unitOfMeasureLike, organizationName, personName);
+
+        var items = rows.stream().map(mapper::toView).toList();
+        return PageResponseDTO.of(items, page, size, total, sort, dir);
     }
+
 
 
     @Transactional

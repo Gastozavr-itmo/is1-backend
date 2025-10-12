@@ -51,4 +51,83 @@ public class OrganizationRepository {
     public long countAllNative(){
         return ((Number) s().createNativeQuery("select count(*) from organization").getSingleResult()).longValue();
     }
+    public List<ru.se.ifmo.is1.model.Organization> findFiltered(
+            String name,
+            String fullName,
+            String officialTownName,
+            String postalTownName,
+            int offset,
+            int limit,
+            String sort,
+            String dir
+    ) {
+        StringBuilder hql = new StringBuilder("""
+        select o
+        from Organization o
+          left join o.officialAddress oa
+          left join oa.town oat
+          left join o.postalAddress pa
+          left join pa.town pat
+        where 1=1
+    """);
+
+        if (name != null && !name.isBlank())        hql.append(" and lower(o.name)      like lower(:name) ");
+        if (fullName != null && !fullName.isBlank())hql.append(" and lower(o.fullName)  like lower(:fullName) ");
+        if (officialTownName != null && !officialTownName.isBlank())
+            hql.append(" and lower(oat.name)     like lower(:officialTownName) ");
+        if (postalTownName != null && !postalTownName.isBlank())
+            hql.append(" and lower(pat.name)     like lower(:postalTownName) ");
+
+        var built   = ru.se.ifmo.is1.repository.util.SortSupport.build(SORT, sort, dir, "id");
+        hql.append(" order by ").append(built.orderBy());
+
+        var q = s().createQuery(hql.toString(), ru.se.ifmo.is1.model.Organization.class);
+
+        if (name != null && !name.isBlank())         q.setParameter("name", "%" + name.trim() + "%");
+        if (fullName != null && !fullName.isBlank()) q.setParameter("fullName", "%" + fullName.trim() + "%");
+        if (officialTownName != null && !officialTownName.isBlank())
+            q.setParameter("officialTownName", "%" + officialTownName.trim() + "%");
+        if (postalTownName != null && !postalTownName.isBlank())
+            q.setParameter("postalTownName", "%" + postalTownName.trim() + "%");
+
+        q.setFirstResult(Math.max(offset, 0));
+        q.setMaxResults(Math.max(limit, 1));
+        return q.list();
+    }
+
+    public long countFiltered(
+            String name,
+            String fullName,
+            String officialTownName,
+            String postalTownName
+    ) {
+        StringBuilder hql = new StringBuilder("""
+        select count(o.id)
+        from Organization o
+          left join o.officialAddress oa
+          left join oa.town oat
+          left join o.postalAddress pa
+          left join pa.town pat
+        where 1=1
+    """);
+
+        if (name != null && !name.isBlank())        hql.append(" and lower(o.name)      like lower(:name) ");
+        if (fullName != null && !fullName.isBlank())hql.append(" and lower(o.fullName)  like lower(:fullName) ");
+        if (officialTownName != null && !officialTownName.isBlank())
+            hql.append(" and lower(oat.name)     like lower(:officialTownName) ");
+        if (postalTownName != null && !postalTownName.isBlank())
+            hql.append(" and lower(pat.name)     like lower(:postalTownName) ");
+
+        var q = s().createQuery(hql.toString(), Long.class);
+
+        if (name != null && !name.isBlank())         q.setParameter("name", "%" + name.trim() + "%");
+        if (fullName != null && !fullName.isBlank()) q.setParameter("fullName", "%" + fullName.trim() + "%");
+        if (officialTownName != null && !officialTownName.isBlank())
+            q.setParameter("officialTownName", "%" + officialTownName.trim() + "%");
+        if (postalTownName != null && !postalTownName.isBlank())
+            q.setParameter("postalTownName", "%" + postalTownName.trim() + "%");
+
+        return q.getSingleResult();
+    }
+
 }

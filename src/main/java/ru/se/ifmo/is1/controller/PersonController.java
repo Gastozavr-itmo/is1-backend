@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.se.ifmo.is1.dto.paging.PageRequestDTO;
 import ru.se.ifmo.is1.dto.paging.PageResponseDTO;
 import ru.se.ifmo.is1.dto.person.PersonCreateDTO;
+import ru.se.ifmo.is1.dto.person.PersonViewDTO;
 import ru.se.ifmo.is1.dto.person.PersonViewFullDTO;
 import ru.se.ifmo.is1.service.PersonService;
 
@@ -24,14 +25,23 @@ public class PersonController {
     }
 
     @GetMapping
-    public PageResponseDTO<PersonViewFullDTO> list(
-            @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "size", defaultValue = "20") int size,
-            @RequestParam(name = "sort", defaultValue = "id") String sort,
-            @RequestParam(name = "dir",  defaultValue = "asc") String dir
+    public ResponseEntity<PageResponseDTO<ru.se.ifmo.is1.dto.person.PersonViewDTO>> list(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size,
+            @RequestParam(value = "sort", defaultValue = "id") String sort,
+            @RequestParam(value = "dir",  defaultValue = "asc") String dir,
+
+            // ФИЛЬТРЫ (строки, неполное совпадение)
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "eyeColor", required = false) String eyeColorLike,
+            @RequestParam(value = "hairColor", required = false) String hairColorLike,
+            @RequestParam(value = "nationality", required = false) String nationalityLike
     ) {
-        return service.list(new PageRequestDTO(page, size, sort, dir));
+        var pageResp = service.list(page, size, sort, dir, name, eyeColorLike, hairColorLike, nationalityLike);
+        return ResponseEntity.ok(pageResp);
     }
+
+
 
 
     @PostMapping

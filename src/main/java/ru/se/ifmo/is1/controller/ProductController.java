@@ -26,14 +26,24 @@ public class ProductController {
 
 
     @GetMapping
-    public PageResponseDTO<ProductViewDTO> list(
-            @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "size", defaultValue = "20") int size,
-            @RequestParam(name = "sort", defaultValue = "id") String sort,
-            @RequestParam(name = "dir",  defaultValue = "asc") String dir
+    public ResponseEntity<PageResponseDTO<ru.se.ifmo.is1.dto.product.ProductViewDTO>> list(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size,
+            @RequestParam(value = "sort", defaultValue = "id") String sort,
+            @RequestParam(value = "dir",  defaultValue = "asc") String dir,
+
+            // ФИЛЬТРЫ
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "partNumber", required = false) String partNumber,
+            @RequestParam(value = "unit", required = false) String unitOfMeasureLike, // ВАЖНО: строка
+            @RequestParam(value = "organizationName", required = false) String organizationName,
+            @RequestParam(value = "personName", required = false) String personName
     ) {
-        return service.list(new PageRequestDTO(page, size, sort, dir));
+        var pageResp = service.list(page, size, sort, dir, name, partNumber, unitOfMeasureLike, organizationName, personName);
+        return ResponseEntity.ok(pageResp);
     }
+
+
 
 
 

@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.se.ifmo.is1.dto.paging.PageRequestDTO;
 import ru.se.ifmo.is1.dto.paging.PageResponseDTO;
 import ru.se.ifmo.is1.dto.person.PersonCreateDTO;
+import ru.se.ifmo.is1.dto.person.PersonViewDTO;
 import ru.se.ifmo.is1.dto.person.PersonViewFullDTO;
 import ru.se.ifmo.is1.mapper.PersonMapper;
 import ru.se.ifmo.is1.model.Location;
@@ -26,12 +27,20 @@ public class PersonService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponseDTO<PersonViewFullDTO> list(PageRequestDTO pr) {
-        var items = repo.findPageNative(pr.offset(), pr.getSize(), pr.getSort(), pr.getDir())
-                .stream().map(mapper::toView).toList();
-        long total = repo.countAllNative();
-        return PageResponseDTO.of(items, pr.getPage(), pr.getSize(), total, pr.getSort(), pr.getDir());
+    public PageResponseDTO<ru.se.ifmo.is1.dto.person.PersonViewDTO> list(
+            int page, int size, String sort, String dir,
+            String name, String eyeColorLike, String hairColorLike, String nationalityLike
+    ) {
+        int offset = Math.max(page, 0) * Math.max(size, 1);
+
+        var rows  = repo.findFiltered(name, eyeColorLike, hairColorLike, nationalityLike,
+                offset, size, sort, dir);
+        long total = repo.countFiltered(name, eyeColorLike, hairColorLike, nationalityLike);
+
+        var items = rows.stream().map(mapper::toLight).toList(); // ВАЖНО: "лёгкий" DTO
+        return PageResponseDTO.of(items, page, size, total, sort, dir);
     }
+
 
     @Transactional
     public Long create(PersonCreateDTO dto) {

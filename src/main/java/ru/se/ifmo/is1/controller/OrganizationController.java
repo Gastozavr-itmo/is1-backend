@@ -23,14 +23,24 @@ public class OrganizationController {
     }
 
     @GetMapping
-    public PageResponseDTO<OrganizationViewDTO> list(
-            @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "size", defaultValue = "20") int size,
-            @RequestParam(name = "sort", defaultValue = "id") String sort,
-            @RequestParam(name = "dir",  defaultValue = "asc") String dir
+    public ResponseEntity<
+            ru.se.ifmo.is1.dto.paging.PageResponseDTO<ru.se.ifmo.is1.dto.organization.OrganizationViewDTO>
+            > list(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size,
+            @RequestParam(value = "sort", defaultValue = "id") String sort,
+            @RequestParam(value = "dir",  defaultValue = "asc") String dir,
+
+            // ФИЛЬТРЫ (все — неполное совпадение)
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "fullName", required = false) String fullName,
+            @RequestParam(value = "officialTownName", required = false) String officialTownName,
+            @RequestParam(value = "postalTownName", required = false) String postalTownName
     ) {
-        return service.list(new PageRequestDTO(page, size, sort, dir));
+        var resp = service.list(page, size, sort, dir, name, fullName, officialTownName, postalTownName);
+        return org.springframework.http.ResponseEntity.ok(resp);
     }
+
 
 
     @PostMapping
