@@ -40,9 +40,55 @@ public class OrganizationMapper {
     }
 
     public OrganizationViewDTO toView(Organization o) {
+        if (o == null) return null;
+
+        // officialAddress -> AddressCreateDTO (с координатами town)
+        AddressCreateDTO officialAddressDto = null;
+        if (o.getOfficialAddress() != null) {
+            var a = o.getOfficialAddress();
+            TownCreateDTO townDto = null;
+            if (a.getTown() != null) {
+                var t = a.getTown();
+                townDto = TownCreateDTO.builder()
+                        .x(t.getX())
+                        .y(t.getY())
+                        .name(t.getName())
+                        .build();
+            }
+            officialAddressDto = AddressCreateDTO.builder()
+                    .zipCode(a.getZipCode())
+                    .town(townDto)
+                    .build();
+        }
+
+        // postalAddress -> AddressCreateDTO (с координатами town)
+        AddressCreateDTO postalAddressDto = null;
+        if (o.getPostalAddress() != null) {
+            var a = o.getPostalAddress();
+            TownCreateDTO townDto = null;
+            if (a.getTown() != null) {
+                var t = a.getTown();
+                townDto = TownCreateDTO.builder()
+                        .x(t.getX())
+                        .y(t.getY())
+                        .name(t.getName())
+                        .build();
+            }
+            postalAddressDto = AddressCreateDTO.builder()
+                    .zipCode(a.getZipCode())
+                    .town(townDto)
+                    .build();
+        }
+
         return OrganizationViewDTO.builder()
                 .id(o.getId())
                 .name(o.getName())
+                .officialAddress(officialAddressDto)
+                .postalAddress(postalAddressDto)
+                .annualTurnover(o.getAnnualTurnover())
+                .employeesCount(o.getEmployeesCount())
+                .fullName(o.getFullName())
+                .rating(o.getRating())
                 .build();
     }
 }

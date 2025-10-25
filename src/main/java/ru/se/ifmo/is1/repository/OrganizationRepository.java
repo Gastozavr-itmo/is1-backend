@@ -26,13 +26,19 @@ public class OrganizationRepository {
     // ==== ВСЕ КОЛОНКИ ORGANIZATION + имя Person (только name) ====
     private static final Map<String, SortSupport.Rule> SORT = new LinkedHashMap<>();
     static {
-        SORT.put("id",               SortSupport.Rule.column("o.id"));
-        SORT.put("name",             SortSupport.Rule.column("o.name"));
-        SORT.put("annualTurnover",   SortSupport.Rule.column("o.annual_turnover"));
-        SORT.put("employeesCount",   SortSupport.Rule.column("o.employees_count"));
-        SORT.put("type",             SortSupport.Rule.column("o.type"));
-        SORT.put("createdAt",        SortSupport.Rule.column("o.created_at"));
-        SORT.put("updatedAt",        SortSupport.Rule.column("o.updated_at"));
+        SORT.put("id",             SortSupport.Rule.column("o.id"));
+        SORT.put("name",           SortSupport.Rule.column("o.name"));
+        SORT.put("fullName",       SortSupport.Rule.column("o.fullName"));
+        SORT.put("employeesCount", SortSupport.Rule.column("o.employeesCount"));
+        SORT.put("annualTurnover", SortSupport.Rule.column("o.annualTurnover"));
+        SORT.put("rating",         SortSupport.Rule.column("o.rating"));
+        // если у тебя есть аудитовские поля:
+        SORT.put("createdAt",   SortSupport.Rule.column("o.createdAt"));
+        // SORT.put("updatedAt",   SortSupport.Rule.column("o.updatedAt"));
+
+        // вложенные value-объекты: адрес и город (join НЕ нужен)
+        SORT.put("officialCity",   SortSupport.Rule.column("o.officialAddress.town.name"));
+        SORT.put("postalCity",     SortSupport.Rule.column("o.postalAddress.town.name"));
 
     }
 

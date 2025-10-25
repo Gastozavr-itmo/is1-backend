@@ -2,9 +2,9 @@ package ru.se.ifmo.is1.dto.product;
 
 import lombok.Builder;
 import lombok.Value;
-import ru.se.ifmo.is1.dto.shared.CoordinatesViewDTO;
 import ru.se.ifmo.is1.dto.organization.OrganizationViewDTO;
 import ru.se.ifmo.is1.dto.person.PersonViewDTO;
+import ru.se.ifmo.is1.dto.shared.CoordinatesCreateDTO;
 import ru.se.ifmo.is1.model.UnitOfMeasure;
 
 import java.util.Date;
@@ -14,7 +14,7 @@ import java.util.Date;
 public class ProductViewDTO {
     Long id;
     String name;
-    CoordinatesViewDTO coordinates;
+    CoordinatesCreateDTO coordinates;
     Date creationDate;
     UnitOfMeasure unitOfMeasure;
     OrganizationViewDTO manufacturer;

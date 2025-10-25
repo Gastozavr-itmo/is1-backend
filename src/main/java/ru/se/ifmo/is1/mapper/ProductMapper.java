@@ -50,7 +50,7 @@ public class ProductMapper {
         return ProductViewDTO.builder()
                 .id(p.getId())
                 .name(p.getName())
-                .coordinates(CoordinatesViewDTO.builder()
+                .coordinates(CoordinatesCreateDTO.builder()
                         .x(p.getCoordinates().getX())
                         .y(p.getCoordinates().getY())
                         .build())

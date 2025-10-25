@@ -42,25 +42,22 @@ public class ProductRepository {
     private static final Map<String, SortSupport.Rule> SORT = new LinkedHashMap<>();
 
     static {
-        // product.*
-        SORT.put("id", SortSupport.Rule.column("p.id"));
-        SORT.put("name", SortSupport.Rule.column("p.name"));
-        SORT.put("price", SortSupport.Rule.column("p.price"));
-        SORT.put("unitOfMeasure", SortSupport.Rule.column("p.unit_of_measure"));
-        SORT.put("creationDate", SortSupport.Rule.column("p.creation_date"));
-        SORT.put("createdAt", SortSupport.Rule.column("p.created_at"));
-        SORT.put("updatedAt", SortSupport.Rule.column("p.updated_at"));
+        // простые поля Product
+        SORT.put("id",            SortSupport.Rule.column("p.id"));
+        SORT.put("name",          SortSupport.Rule.column("p.name"));
+        SORT.put("price",         SortSupport.Rule.column("p.price"));
+        SORT.put("rating",        SortSupport.Rule.column("p.rating"));
+        SORT.put("partNumber",    SortSupport.Rule.column("p.partNumber"));
+        SORT.put("unitOfMeasure", SortSupport.Rule.column("p.unitOfMeasure"));
+        SORT.put("creationDate",  SortSupport.Rule.column("p.creationDate"));
 
-        SORT.put("organizationName", SortSupport.Rule.joined(
-                "m.name",
-                " left join organization m on m.id = p.manufacturer_id "
-        ));
+        SORT.put("owner", SortSupport.Rule.column("p.owner.name"));
+        SORT.put("manufacturer", SortSupport.Rule.column("p.manufacturer.name"));
 
-        SORT.put("personName", SortSupport.Rule.joined(
-                "per.name",
-                " left join person per on per.id = p.owner_id "
-        ));
+
     }
+
+
 
 
     public List<Product> findPageNative(int offset, int size, String sort, String dir) {

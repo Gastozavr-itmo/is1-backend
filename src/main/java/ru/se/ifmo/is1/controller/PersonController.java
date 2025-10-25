@@ -3,14 +3,10 @@ package ru.se.ifmo.is1.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.se.ifmo.is1.dto.paging.PageRequestDTO;
 import ru.se.ifmo.is1.dto.paging.PageResponseDTO;
 import ru.se.ifmo.is1.dto.person.PersonCreateDTO;
 import ru.se.ifmo.is1.dto.person.PersonViewDTO;
-import ru.se.ifmo.is1.dto.person.PersonViewFullDTO;
 import ru.se.ifmo.is1.service.PersonService;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/person")
@@ -20,7 +16,7 @@ public class PersonController {
     private final PersonService service;
 
     @GetMapping("/{id}")
-    public PersonViewFullDTO get(@PathVariable("id") Long id) {
+    public PersonViewDTO get(@PathVariable("id") Long id) {
         return service.get(id);
     }
 
@@ -31,15 +27,17 @@ public class PersonController {
             @RequestParam(value = "sort", defaultValue = "id") String sort,
             @RequestParam(value = "dir",  defaultValue = "asc") String dir,
 
-            // ФИЛЬТРЫ (строки, неполное совпадение)
-            @RequestParam(value = "name", required = false) String name,
-            @RequestParam(value = "eyeColor", required = false) String eyeColorLike,
-            @RequestParam(value = "hairColor", required = false) String hairColorLike,
-            @RequestParam(value = "nationality", required = false) String nationalityLike
+            @RequestParam(value = "name",        required = false) String name,
+            @RequestParam(value = "eyeColor",    required = false) String eyeColorLike,
+            @RequestParam(value = "hairColor",   required = false) String hairColorLike,
+            @RequestParam(value = "nationality", required = false) String nationalityLike,
+            @RequestParam(value = "locationName", required = false) String locationName
     ) {
-        var pageResp = service.list(page, size, sort, dir, name, eyeColorLike, hairColorLike, nationalityLike);
+        var pageResp = service.list(page, size, sort, dir,
+                name, eyeColorLike, hairColorLike, nationalityLike, locationName);
         return ResponseEntity.ok(pageResp);
     }
+
 
 
 

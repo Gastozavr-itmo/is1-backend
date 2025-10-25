@@ -4,8 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.stereotype.Repository;
-import ru.se.ifmo.is1.model.Color;
-import ru.se.ifmo.is1.model.Country;
 import ru.se.ifmo.is1.model.Person;
 import ru.se.ifmo.is1.repository.util.SortSupport;
 
@@ -43,13 +41,17 @@ public class PersonRepository {
     private static final Map<String, SortSupport.Rule> SORT = new LinkedHashMap<>();
 
     static {
-        SORT.put("id", SortSupport.Rule.column("p.id"));
-        SORT.put("name", SortSupport.Rule.column("p.name"));
-        SORT.put("height", SortSupport.Rule.column("p.height"));
+        SORT.put("id",          SortSupport.Rule.column("p.id"));
+        SORT.put("name",        SortSupport.Rule.column("p.name"));
+        SORT.put("height",      SortSupport.Rule.column("p.height"));
         SORT.put("nationality", SortSupport.Rule.column("p.nationality"));
-        SORT.put("birthday", SortSupport.Rule.column("p.birthday"));
-        SORT.put("createdAt", SortSupport.Rule.column("p.created_at"));
-        SORT.put("updatedAt", SortSupport.Rule.column("p.updated_at"));
+        SORT.put("eyeColor",    SortSupport.Rule.column("p.eyeColor"));
+        SORT.put("hairColor",   SortSupport.Rule.column("p.hairColor"));
+
+        // location — встраиваемый value-объект
+        SORT.put("locationName", SortSupport.Rule.column("p.location.name"));
+        SORT.put("locationX",    SortSupport.Rule.column("p.location.x"));
+        SORT.put("locationY",    SortSupport.Rule.column("p.location.y"));
     }
 
     public List<Person> findPageNative(int offset, int size, String sort, String dir) {
@@ -72,12 +74,13 @@ public class PersonRepository {
             String eyeColorLike,
             String hairColorLike,
             String nationalityLike,
+            String locationName,            // ← добавлено
             int offset, int limit, String sort, String dir
     ) {
-        // соберём множества enum по подстроке
-        java.util.List<ru.se.ifmo.is1.model.Color> eyes = null;
-        java.util.List<ru.se.ifmo.is1.model.Color> hairs = null;
-        java.util.List<ru.se.ifmo.is1.model.Country> nats = null;
+        // подготовим множества enum по подстроке
+        List<ru.se.ifmo.is1.model.Color> eyes = null;
+        List<ru.se.ifmo.is1.model.Color> hairs = null;
+        List<ru.se.ifmo.is1.model.Country> nats = null;
 
         if (eyeColorLike != null && !eyeColorLike.isBlank()) {
             String n = eyeColorLike.trim().toLowerCase();
@@ -102,25 +105,28 @@ public class PersonRepository {
         }
 
         StringBuilder hql = new StringBuilder("""
-        select p
-        from Person p
-        where 1=1
-    """);
+            select p
+            from Person p
+            where 1=1
+        """);
 
-        if (name != null && !name.isBlank()) hql.append(" and lower(p.name) like lower(:name) ");
-        if (eyes != null)                    hql.append(" and p.eyeColor in (:eyes) ");
-        if (hairs != null)                   hql.append(" and p.hairColor in (:hairs) ");
-        if (nats != null)                    hql.append(" and p.nationality in (:nats) ");
+        if (name != null && !name.isBlank())        hql.append(" and lower(p.name) like lower(:name) ");
+        if (eyes != null)                            hql.append(" and p.eyeColor in (:eyes) ");
+        if (hairs != null)                           hql.append(" and p.hairColor in (:hairs) ");
+        if (nats != null)                            hql.append(" and p.nationality in (:nats) ");
+        if (locationName != null && !locationName.isBlank())
+            hql.append(" and lower(p.location.name) like lower(:locName) ");
 
-        var built = ru.se.ifmo.is1.repository.util.SortSupport.build(SORT, sort, dir, "id");
-        String orderBy = built.orderBy();
-        hql.append(" order by ").append(orderBy);
+        var built = SortSupport.build(SORT, sort, dir, "id");
+        hql.append(" order by ").append(built.orderBy());
 
         var q = s().createQuery(hql.toString(), Person.class);
-        if (name != null && !name.isBlank()) q.setParameter("name", "%" + name.trim() + "%");
-        if (eyes != null)                    q.setParameterList("eyes", eyes);
-        if (hairs != null)                   q.setParameterList("hairs", hairs);
-        if (nats != null)                    q.setParameterList("nats", nats);
+        if (name != null && !name.isBlank())        q.setParameter("name", "%" + name.trim() + "%");
+        if (eyes != null)                            q.setParameterList("eyes", eyes);
+        if (hairs != null)                           q.setParameterList("hairs", hairs);
+        if (nats != null)                            q.setParameterList("nats", nats);
+        if (locationName != null && !locationName.isBlank())
+            q.setParameter("locName", "%" + locationName.trim() + "%");
 
         q.setFirstResult(Math.max(offset, 0));
         q.setMaxResults(Math.max(limit, 1));
@@ -131,11 +137,12 @@ public class PersonRepository {
             String name,
             String eyeColorLike,
             String hairColorLike,
-            String nationalityLike
+            String nationalityLike,
+            String locationName            // ← добавлено
     ) {
-        java.util.List<ru.se.ifmo.is1.model.Color> eyes = null;
-        java.util.List<ru.se.ifmo.is1.model.Color> hairs = null;
-        java.util.List<ru.se.ifmo.is1.model.Country> nats = null;
+        List<ru.se.ifmo.is1.model.Color> eyes = null;
+        List<ru.se.ifmo.is1.model.Color> hairs = null;
+        List<ru.se.ifmo.is1.model.Country> nats = null;
 
         if (eyeColorLike != null && !eyeColorLike.isBlank()) {
             String n = eyeColorLike.trim().toLowerCase();
@@ -160,21 +167,25 @@ public class PersonRepository {
         }
 
         StringBuilder hql = new StringBuilder("""
-        select count(p.id)
-        from Person p
-        where 1=1
-    """);
+            select count(p.id)
+            from Person p
+            where 1=1
+        """);
 
-        if (name != null && !name.isBlank()) hql.append(" and lower(p.name) like lower(:name) ");
-        if (eyes != null)                    hql.append(" and p.eyeColor in (:eyes) ");
-        if (hairs != null)                   hql.append(" and p.hairColor in (:hairs) ");
-        if (nats != null)                    hql.append(" and p.nationality in (:nats) ");
+        if (name != null && !name.isBlank())        hql.append(" and lower(p.name) like lower(:name) ");
+        if (eyes != null)                            hql.append(" and p.eyeColor in (:eyes) ");
+        if (hairs != null)                           hql.append(" and p.hairColor in (:hairs) ");
+        if (nats != null)                            hql.append(" and p.nationality in (:nats) ");
+        if (locationName != null && !locationName.isBlank())
+            hql.append(" and lower(p.location.name) like lower(:locName) ");
 
         var q = s().createQuery(hql.toString(), Long.class);
-        if (name != null && !name.isBlank()) q.setParameter("name", "%" + name.trim() + "%");
-        if (eyes != null)                    q.setParameterList("eyes", eyes);
-        if (hairs != null)                   q.setParameterList("hairs", hairs);
-        if (nats != null)                    q.setParameterList("nats", nats);
+        if (name != null && !name.isBlank())        q.setParameter("name", "%" + name.trim() + "%");
+        if (eyes != null)                            q.setParameterList("eyes", eyes);
+        if (hairs != null)                           q.setParameterList("hairs", hairs);
+        if (nats != null)                            q.setParameterList("nats", nats);
+        if (locationName != null && !locationName.isBlank())
+            q.setParameter("locName", "%" + locationName.trim() + "%");
 
         return q.getSingleResult();
     }

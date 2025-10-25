@@ -3,17 +3,13 @@ package ru.se.ifmo.is1.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.se.ifmo.is1.dto.paging.PageRequestDTO;
 import ru.se.ifmo.is1.dto.paging.PageResponseDTO;
 import ru.se.ifmo.is1.dto.person.PersonCreateDTO;
 import ru.se.ifmo.is1.dto.person.PersonViewDTO;
-import ru.se.ifmo.is1.dto.person.PersonViewFullDTO;
 import ru.se.ifmo.is1.mapper.PersonMapper;
 import ru.se.ifmo.is1.model.Location;
 import ru.se.ifmo.is1.model.Person;
 import ru.se.ifmo.is1.repository.PersonRepository;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -22,22 +18,22 @@ public class PersonService {
     private final PersonMapper mapper;
 
     @Transactional(readOnly = true)
-    public PersonViewFullDTO get(Long id) {
+    public PersonViewDTO get(Long id) {
         return mapper.toView(repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Person not found")));
     }
 
     @Transactional(readOnly = true)
-    public PageResponseDTO<ru.se.ifmo.is1.dto.person.PersonViewDTO> list(
+    public PageResponseDTO<PersonViewDTO> list(
             int page, int size, String sort, String dir,
-            String name, String eyeColorLike, String hairColorLike, String nationalityLike
-    ) {
+            String name, String eyeColorLike, String hairColorLike, String nationalityLike,
+            String locationName) {
         int offset = Math.max(page, 0) * Math.max(size, 1);
 
-        var rows  = repo.findFiltered(name, eyeColorLike, hairColorLike, nationalityLike,
+        var rows  = repo.findFiltered(name, eyeColorLike, hairColorLike, nationalityLike,locationName,
                 offset, size, sort, dir);
-        long total = repo.countFiltered(name, eyeColorLike, hairColorLike, nationalityLike);
+        long total = repo.countFiltered(name, eyeColorLike, hairColorLike, nationalityLike,locationName);
 
-        var items = rows.stream().map(mapper::toLight).toList(); // ВАЖНО: "лёгкий" DTO
+        var items = rows.stream().map(mapper::toView).toList(); // ВАЖНО: "лёгкий" DTO
         return PageResponseDTO.of(items, page, size, total, sort, dir);
     }
 

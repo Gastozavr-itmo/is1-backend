@@ -3,7 +3,6 @@ package ru.se.ifmo.is1.mapper;
 import org.springframework.stereotype.Component;
 import ru.se.ifmo.is1.dto.person.PersonCreateDTO;
 import ru.se.ifmo.is1.dto.person.PersonViewDTO;
-import ru.se.ifmo.is1.dto.person.PersonViewFullDTO;
 import ru.se.ifmo.is1.dto.shared.LocationCreateDTO;
 import ru.se.ifmo.is1.model.Location;
 import ru.se.ifmo.is1.model.Person;
@@ -28,23 +27,19 @@ public class PersonMapper {
         p.setNationality(dto.getNationality());
         return p;
     }
-
-    public PersonViewDTO toLight(Person p) {
+    public PersonViewDTO toView(Person p) {
         return PersonViewDTO.builder()
-                .id(p.getId())
-                .name(p.getName())
-                .build();
-    }
-
-    public PersonViewFullDTO toView(Person p) {
-        return PersonViewFullDTO.builder()
                 .id(p.getId())
                 .name(p.getName())
                 .eyeColor(p.getEyeColor())
                 .hairColor(p.getHairColor())
                 .locationName(p.getLocation() != null ? p.getLocation().getName() : null)
+                .locationX(p.getLocation() != null ? p.getLocation().getX() : null)
+                .locationY(p.getLocation() != null ? p.getLocation().getY() : null)
                 .height(p.getHeight())
                 .nationality(p.getNationality())
                 .build();
     }
+
 }
+
