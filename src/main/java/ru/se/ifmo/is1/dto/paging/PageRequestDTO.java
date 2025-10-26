@@ -1,17 +1,13 @@
 package ru.se.ifmo.is1.dto.paging;
 
+import lombok.Data;
 import lombok.Value;
 
 @Value
+@Data
 public class PageRequestDTO {
-    int page;
-    int size;
-    String sort;
-    String dir;
-
-    public int offset() { return Math.max(0, page) * Math.max(1, size); }
-
-    public String direction() {
-        return "desc".equalsIgnoreCase(dir) ? "desc" : "asc";
-    }
+    private int page;
+    private int size;
+    private String sort;
+    private String dir;
 }

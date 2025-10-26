@@ -10,12 +10,14 @@ import ru.se.ifmo.is1.mapper.PersonMapper;
 import ru.se.ifmo.is1.model.Location;
 import ru.se.ifmo.is1.model.Person;
 import ru.se.ifmo.is1.repository.PersonRepository;
+import ru.se.ifmo.is1.ws.ChangePublisher;
 
 @Service
 @RequiredArgsConstructor
 public class PersonService {
     private final PersonRepository repo;
     private final PersonMapper mapper;
+    private final ChangePublisher changes;
 
     @Transactional(readOnly = true)
     public PersonViewDTO get(Long id) {
@@ -42,7 +44,9 @@ public class PersonService {
     public Long create(PersonCreateDTO dto) {
         Person p = mapper.toEntity(dto);
         validate(p);
-        return repo.save(p);
+        Long id = repo.save(p);
+        changes.broadcast("person","created", id);
+        return id;
     }
 
     @Transactional
@@ -51,12 +55,14 @@ public class PersonService {
         p.setId(id);
         validate(p);
         repo.merge(p);
+        changes.broadcast("person","updated", id);
     }
 
     @Transactional
     public void delete(Long id) {
         var e = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Person not found"));
         repo.delete(e);
+        changes.broadcast("person","deleted", id);
     }
 
     private void validate(Person p) {

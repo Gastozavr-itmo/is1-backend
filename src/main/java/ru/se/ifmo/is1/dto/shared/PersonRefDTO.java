@@ -6,5 +6,5 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class PersonRefDTO {
-    Long id;
+    private Long id;
 }

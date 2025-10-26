@@ -5,21 +5,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.se.ifmo.is1.dto.organization.OrganizationCreateDTO;
 import ru.se.ifmo.is1.dto.organization.OrganizationViewDTO;
-import ru.se.ifmo.is1.dto.paging.PageRequestDTO;
-import ru.se.ifmo.is1.dto.paging.PageResponseDTO;
+
 import ru.se.ifmo.is1.mapper.OrganizationMapper;
 import ru.se.ifmo.is1.model.Address;
 import ru.se.ifmo.is1.model.Location;
 import ru.se.ifmo.is1.model.Organization;
 import ru.se.ifmo.is1.repository.OrganizationRepository;
+import ru.se.ifmo.is1.ws.ChangePublisher;
 
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class OrganizationService {
     private final OrganizationRepository repo;
     private final OrganizationMapper mapper;
+    private final ChangePublisher changes;
 
     @Transactional(readOnly = true)
     public OrganizationViewDTO get(Integer id) {
@@ -53,7 +53,9 @@ public class OrganizationService {
     public Integer create(OrganizationCreateDTO dto) {
         Organization o = mapper.toEntity(dto);
         validate(o);
-        return repo.save(o);
+        Integer id = repo.save(o);
+        changes.broadcast("organization", "created", id);
+        return id;
     }
 
     @Transactional
@@ -62,12 +64,14 @@ public class OrganizationService {
         o.setId(id);
         validate(o);
         repo.merge(o);
+        changes.broadcast("organization", "updated", id);
     }
 
     @Transactional
     public void delete(Integer id) {
         var e = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Organization not found"));
         repo.delete(e);
+        changes.broadcast("organization", "deleted", id);
     }
 
     private void validate(Organization o) {

@@ -1,6 +1,7 @@
 package ru.se.ifmo.is1.dto.product;
 
 import lombok.Builder;
+import lombok.Data;
 import lombok.Value;
 import ru.se.ifmo.is1.dto.organization.OrganizationViewDTO;
 import ru.se.ifmo.is1.dto.person.PersonViewDTO;
@@ -11,16 +12,17 @@ import java.util.Date;
 
 @Value
 @Builder
+@Data
 public class ProductViewDTO {
-    Long id;
-    String name;
-    CoordinatesCreateDTO coordinates;
-    Date creationDate;
-    UnitOfMeasure unitOfMeasure;
-    OrganizationViewDTO manufacturer;
-    Long price;
-    Integer manufactureCost;
-    Long rating;
-    String partNumber;
-    PersonViewDTO owner; // nullable
+    private Long id;
+    private String name;
+    private CoordinatesCreateDTO coordinates;
+    private Date creationDate;
+    private UnitOfMeasure unitOfMeasure;
+    private OrganizationViewDTO manufacturer;
+    private Long price;
+    private Integer manufactureCost;
+    private Long rating;
+    private String partNumber;
+    private PersonViewDTO owner;
 }

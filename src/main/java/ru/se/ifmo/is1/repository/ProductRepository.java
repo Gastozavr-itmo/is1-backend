@@ -5,7 +5,6 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.stereotype.Repository;
 import ru.se.ifmo.is1.model.Product;
-import ru.se.ifmo.is1.model.UnitOfMeasure;
 import ru.se.ifmo.is1.repository.util.SortSupport;
 
 import java.util.LinkedHashMap;
@@ -42,7 +41,6 @@ public class ProductRepository {
     private static final Map<String, SortSupport.Rule> SORT = new LinkedHashMap<>();
 
     static {
-        // простые поля Product
         SORT.put("id",            SortSupport.Rule.column("p.id"));
         SORT.put("name",          SortSupport.Rule.column("p.name"));
         SORT.put("price",         SortSupport.Rule.column("p.price"));

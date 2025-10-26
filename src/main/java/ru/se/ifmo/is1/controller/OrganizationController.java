@@ -31,7 +31,6 @@ public class OrganizationController {
             @RequestParam(value = "sort", defaultValue = "id") String sort,
             @RequestParam(value = "dir",  defaultValue = "asc") String dir,
 
-            // ФИЛЬТРЫ (все — неполное совпадение)
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "fullName", required = false) String fullName,
             @RequestParam(value = "officialTownName", required = false) String officialTownName,

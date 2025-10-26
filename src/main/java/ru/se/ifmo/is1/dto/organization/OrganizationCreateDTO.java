@@ -8,11 +8,11 @@ import ru.se.ifmo.is1.dto.shared.AddressCreateDTO;
 @AllArgsConstructor
 @Builder
 public class OrganizationCreateDTO {
-    private String name;                  // not empty
-    private Double annualTurnover;        // >0
-    private Integer employeesCount;       // >0
-    private String fullName;              // nullable
-    private Integer rating;               // >0
-    private AddressCreateDTO officialAddress; // not null
-    private AddressCreateDTO postalAddress;   // not null
+    private String name;
+    private Double annualTurnover;
+    private Integer employeesCount;
+    private String fullName;
+    private Integer rating;
+    private AddressCreateDTO officialAddress;
+    private AddressCreateDTO postalAddress;
 }

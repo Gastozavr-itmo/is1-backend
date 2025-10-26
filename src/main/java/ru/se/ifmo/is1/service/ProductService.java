@@ -3,7 +3,6 @@ package ru.se.ifmo.is1.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.se.ifmo.is1.dto.paging.PageRequestDTO;
 import ru.se.ifmo.is1.dto.paging.PageResponseDTO;
 import ru.se.ifmo.is1.dto.product.ProductCreateDTO;
 import ru.se.ifmo.is1.dto.product.ProductViewDTO;
@@ -11,6 +10,7 @@ import ru.se.ifmo.is1.mapper.ProductMapper;
 import ru.se.ifmo.is1.model.Coordinates;
 import ru.se.ifmo.is1.model.Product;
 import ru.se.ifmo.is1.repository.ProductRepository;
+import ru.se.ifmo.is1.ws.ChangePublisher;
 
 
 @Service
@@ -18,6 +18,7 @@ import ru.se.ifmo.is1.repository.ProductRepository;
 public class ProductService {
     private final ProductRepository repo;
     private final ProductMapper mapper;
+    private final ChangePublisher changes;
 
     @Transactional(readOnly = true)
     public ProductViewDTO get(Long id) {
@@ -46,7 +47,9 @@ public class ProductService {
     public Long create(ProductCreateDTO dto) {
         Product p = mapper.toEntity(dto);
         validate(p);
-        return repo.save(p);
+        Long id = repo.save(p);
+        changes.broadcast("product", "created", id); // ← уведомление
+        return id;
     }
 
     @Transactional
@@ -55,12 +58,14 @@ public class ProductService {
         p.setId(id);
         validate(p);
         repo.merge(p);
+        changes.broadcast("product", "updated", id);
     }
 
     @Transactional
     public void delete(Long id) {
         var e = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Product not found"));
         repo.delete(e);
+        changes.broadcast("product", "deleted", id);
     }
 
     private void validate(Product p) {

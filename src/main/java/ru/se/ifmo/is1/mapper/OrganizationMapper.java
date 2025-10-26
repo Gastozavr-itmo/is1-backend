@@ -42,7 +42,6 @@ public class OrganizationMapper {
     public OrganizationViewDTO toView(Organization o) {
         if (o == null) return null;
 
-        // officialAddress -> AddressCreateDTO (с координатами town)
         AddressCreateDTO officialAddressDto = null;
         if (o.getOfficialAddress() != null) {
             var a = o.getOfficialAddress();
@@ -61,7 +60,6 @@ public class OrganizationMapper {
                     .build();
         }
 
-        // postalAddress -> AddressCreateDTO (с координатами town)
         AddressCreateDTO postalAddressDto = null;
         if (o.getPostalAddress() != null) {
             var a = o.getPostalAddress();

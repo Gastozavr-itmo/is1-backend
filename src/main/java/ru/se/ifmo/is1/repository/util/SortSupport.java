@@ -8,9 +8,6 @@ public class SortSupport {
         public static Rule column(String qualifiedColumn) {
             return new Rule(qualifiedColumn, null);
         }
-        public static Rule joined(String qualifiedColumn, String joinClause) {
-            return new Rule(qualifiedColumn, joinClause);
-        }
     }
 
     public static Built build(Map<String, Rule> whitelist, String sortKey, String dir, String defaultKey) {

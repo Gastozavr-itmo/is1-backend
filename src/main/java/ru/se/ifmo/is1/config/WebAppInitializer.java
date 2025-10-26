@@ -25,7 +25,7 @@ public class WebAppInitializer extends AbstractAnnotationConfigDispatcherServlet
         // Готовим конфиг прямо здесь
         var cfg = new CorsConfiguration();
         cfg.setAllowCredentials(true);
-        cfg.setAllowedOrigins(List.of("http://localhost:5173", "http://127.0.0.1:5173"));
+        cfg.setAllowedOrigins(List.of("http://localhost:53062", "http://127.0.0.1:53062"));
         cfg.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
         cfg.setAllowedHeaders(List.of("Origin","Accept","Content-Type","Authorization","X-Requested-With"));
         cfg.setExposedHeaders(List.of("Location"));
@@ -39,7 +39,6 @@ public class WebAppInitializer extends AbstractAnnotationConfigDispatcherServlet
 
     @Override
     protected void customizeRegistration(ServletRegistration.Dynamic registration) {
-        // чтобы OPTIONS обрабатывался диспетчером при необходимости
         registration.setInitParameter("dispatchOptionsRequest", "true");
     }
 }

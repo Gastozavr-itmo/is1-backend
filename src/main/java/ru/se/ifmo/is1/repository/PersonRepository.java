@@ -74,10 +74,9 @@ public class PersonRepository {
             String eyeColorLike,
             String hairColorLike,
             String nationalityLike,
-            String locationName,            // ← добавлено
+            String locationName,
             int offset, int limit, String sort, String dir
     ) {
-        // подготовим множества enum по подстроке
         List<ru.se.ifmo.is1.model.Color> eyes = null;
         List<ru.se.ifmo.is1.model.Color> hairs = null;
         List<ru.se.ifmo.is1.model.Country> nats = null;

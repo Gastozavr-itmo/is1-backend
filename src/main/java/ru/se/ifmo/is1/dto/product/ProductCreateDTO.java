@@ -12,12 +12,12 @@ import ru.se.ifmo.is1.model.UnitOfMeasure;
 @Builder
 public class ProductCreateDTO {
     private String name;
-    private CoordinatesCreateDTO coordinates;   // x<=450, y>-422, not null
-    private UnitOfMeasure unitOfMeasure;        // not null
-    private OrganizationRefDTO manufacturer;    // not null, id required
-    private Long price;                         // >0, not null
-    private Integer manufactureCost;            // can be null
-    private Long rating;                        // >0, not null
-    private String partNumber;                  // not empty, not null
-    private PersonRefDTO owner;                 // can be null
+    private CoordinatesCreateDTO coordinates;
+    private UnitOfMeasure unitOfMeasure;
+    private OrganizationRefDTO manufacturer;
+    private Long price;
+    private Integer manufactureCost;
+    private Long rating;
+    private String partNumber;
+    private PersonRefDTO owner;
 }

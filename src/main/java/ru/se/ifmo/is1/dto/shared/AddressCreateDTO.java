@@ -7,6 +7,6 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class AddressCreateDTO {
-    private String zipCode;           // not empty
-    private TownCreateDTO town;       // not null
+    private String zipCode;
+    private TownCreateDTO town;
 }

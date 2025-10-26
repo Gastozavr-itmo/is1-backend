@@ -6,5 +6,5 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class OrganizationRefDTO {
-    Integer id;
+    private Integer id;
 }
