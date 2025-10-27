@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.se.ifmo.is1.dto.organization.OrganizationCreateDTO;
 import ru.se.ifmo.is1.dto.organization.OrganizationViewDTO;
 
+import ru.se.ifmo.is1.dto.paging.PageResponseDTO;
 import ru.se.ifmo.is1.mapper.OrganizationMapper;
 import ru.se.ifmo.is1.model.Address;
 import ru.se.ifmo.is1.model.Location;
@@ -27,7 +28,7 @@ public class OrganizationService {
     }
 
     @Transactional(readOnly = true)
-    public ru.se.ifmo.is1.dto.paging.PageResponseDTO<ru.se.ifmo.is1.dto.organization.OrganizationViewDTO> list(
+    public PageResponseDTO<OrganizationViewDTO> list(
             int page,
             int size,
             String sort,
@@ -43,7 +44,7 @@ public class OrganizationService {
         long total = repo.countFiltered(name, fullName, officialTownName, postalTownName);
 
         var items = rows.stream().map(mapper::toView).toList();
-        return ru.se.ifmo.is1.dto.paging.PageResponseDTO.of(items, page, size, total, sort, dir);
+        return PageResponseDTO.of(items, page, size, total, sort, dir);
     }
 
 

@@ -26,7 +26,7 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponseDTO<ru.se.ifmo.is1.dto.product.ProductViewDTO> list(
+    public PageResponseDTO<ProductViewDTO> list(
             int page, int size, String sort, String dir,
             String name, String partNumber, String unitOfMeasureLike,
             String organizationName, String personName

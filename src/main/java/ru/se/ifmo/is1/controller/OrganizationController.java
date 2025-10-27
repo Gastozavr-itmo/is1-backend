@@ -5,7 +5,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.se.ifmo.is1.dto.organization.OrganizationCreateDTO;
 import ru.se.ifmo.is1.dto.organization.OrganizationViewDTO;
-import ru.se.ifmo.is1.dto.paging.PageRequestDTO;
 import ru.se.ifmo.is1.dto.paging.PageResponseDTO;
 import ru.se.ifmo.is1.service.OrganizationService;
 
@@ -24,7 +23,7 @@ public class OrganizationController {
 
     @GetMapping
     public ResponseEntity<
-            ru.se.ifmo.is1.dto.paging.PageResponseDTO<ru.se.ifmo.is1.dto.organization.OrganizationViewDTO>
+            PageResponseDTO<OrganizationViewDTO>
             > list(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size,

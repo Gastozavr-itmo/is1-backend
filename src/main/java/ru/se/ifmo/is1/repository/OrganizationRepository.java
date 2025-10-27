@@ -37,22 +37,7 @@ public class OrganizationRepository {
 
     }
 
-    public List<Organization> findPageNative(int offset, int size, String sort, String dir){
-        var built = SortSupport.build(SORT, sort, dir, "id");
-        String joins = String.join(" ", built.joins());
-        String sql = "select o.* from organization o " + joins +
-                " order by " + built.orderBy() +
-                " limit :size offset :offset";
-        return s().createNativeQuery(sql, Organization.class)
-                .setParameter("size", size)
-                .setParameter("offset", offset)
-                .getResultList();
-    }
-
-    public long countAllNative(){
-        return ((Number) s().createNativeQuery("select count(*) from organization").getSingleResult()).longValue();
-    }
-    public List<ru.se.ifmo.is1.model.Organization> findFiltered(
+    public List<Organization> findFiltered(
             String name,
             String fullName,
             String officialTownName,
@@ -79,10 +64,10 @@ public class OrganizationRepository {
         if (postalTownName != null && !postalTownName.isBlank())
             hql.append(" and lower(pat.name)     like lower(:postalTownName) ");
 
-        var built   = ru.se.ifmo.is1.repository.util.SortSupport.build(SORT, sort, dir, "id");
+        var built   = SortSupport.build(SORT, sort, dir, "id");
         hql.append(" order by ").append(built.orderBy());
 
-        var q = s().createQuery(hql.toString(), ru.se.ifmo.is1.model.Organization.class);
+        var q = s().createQuery(hql.toString(), Organization.class);
 
         if (name != null && !name.isBlank())         q.setParameter("name", "%" + name.trim() + "%");
         if (fullName != null && !fullName.isBlank()) q.setParameter("fullName", "%" + fullName.trim() + "%");

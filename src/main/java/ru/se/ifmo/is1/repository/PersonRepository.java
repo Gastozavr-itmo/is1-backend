@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.stereotype.Repository;
+import ru.se.ifmo.is1.model.Color;
+import ru.se.ifmo.is1.model.Country;
 import ru.se.ifmo.is1.model.Person;
 import ru.se.ifmo.is1.repository.util.SortSupport;
 
@@ -48,26 +50,11 @@ public class PersonRepository {
         SORT.put("eyeColor",    SortSupport.Rule.column("p.eyeColor"));
         SORT.put("hairColor",   SortSupport.Rule.column("p.hairColor"));
 
-        // location — встраиваемый value-объект
         SORT.put("locationName", SortSupport.Rule.column("p.location.name"));
         SORT.put("locationX",    SortSupport.Rule.column("p.location.x"));
         SORT.put("locationY",    SortSupport.Rule.column("p.location.y"));
     }
 
-    public List<Person> findPageNative(int offset, int size, String sort, String dir) {
-        var built = SortSupport.build(SORT, sort, dir, "id");
-        String sql = "select p.* from person p " +
-                "order by " + built.orderBy() +
-                " limit :size offset :offset";
-        return s().createNativeQuery(sql, Person.class)
-                .setParameter("size", size)
-                .setParameter("offset", offset)
-                .getResultList();
-    }
-
-    public long countAllNative() {
-        return ((Number) s().createNativeQuery("select count(*) from person").getSingleResult()).longValue();
-    }
 
     public List<Person> findFiltered(
             String name,
@@ -77,27 +64,27 @@ public class PersonRepository {
             String locationName,
             int offset, int limit, String sort, String dir
     ) {
-        List<ru.se.ifmo.is1.model.Color> eyes = null;
-        List<ru.se.ifmo.is1.model.Color> hairs = null;
-        List<ru.se.ifmo.is1.model.Country> nats = null;
+        List<Color> eyes = null;
+        List<Color> hairs = null;
+        List<Country> nats = null;
 
         if (eyeColorLike != null && !eyeColorLike.isBlank()) {
             String n = eyeColorLike.trim().toLowerCase();
-            eyes = java.util.Arrays.stream(ru.se.ifmo.is1.model.Color.values())
+            eyes = java.util.Arrays.stream(Color.values())
                     .filter(c -> c.name().toLowerCase().contains(n))
                     .toList();
             if (eyes.isEmpty()) return java.util.List.of();
         }
         if (hairColorLike != null && !hairColorLike.isBlank()) {
             String n = hairColorLike.trim().toLowerCase();
-            hairs = java.util.Arrays.stream(ru.se.ifmo.is1.model.Color.values())
+            hairs = java.util.Arrays.stream(Color.values())
                     .filter(c -> c.name().toLowerCase().contains(n))
                     .toList();
             if (hairs.isEmpty()) return java.util.List.of();
         }
         if (nationalityLike != null && !nationalityLike.isBlank()) {
             String n = nationalityLike.trim().toLowerCase();
-            nats = java.util.Arrays.stream(ru.se.ifmo.is1.model.Country.values())
+            nats = java.util.Arrays.stream(Country.values())
                     .filter(c -> c.name().toLowerCase().contains(n))
                     .toList();
             if (nats.isEmpty()) return java.util.List.of();
@@ -137,29 +124,29 @@ public class PersonRepository {
             String eyeColorLike,
             String hairColorLike,
             String nationalityLike,
-            String locationName            // ← добавлено
+            String locationName
     ) {
-        List<ru.se.ifmo.is1.model.Color> eyes = null;
-        List<ru.se.ifmo.is1.model.Color> hairs = null;
-        List<ru.se.ifmo.is1.model.Country> nats = null;
+        List<Color> eyes = null;
+        List<Color> hairs = null;
+        List<Country> nats = null;
 
         if (eyeColorLike != null && !eyeColorLike.isBlank()) {
             String n = eyeColorLike.trim().toLowerCase();
-            eyes = java.util.Arrays.stream(ru.se.ifmo.is1.model.Color.values())
+            eyes = java.util.Arrays.stream(Color.values())
                     .filter(c -> c.name().toLowerCase().contains(n))
                     .toList();
             if (eyes.isEmpty()) return 0L;
         }
         if (hairColorLike != null && !hairColorLike.isBlank()) {
             String n = hairColorLike.trim().toLowerCase();
-            hairs = java.util.Arrays.stream(ru.se.ifmo.is1.model.Color.values())
+            hairs = java.util.Arrays.stream(Color.values())
                     .filter(c -> c.name().toLowerCase().contains(n))
                     .toList();
             if (hairs.isEmpty()) return 0L;
         }
         if (nationalityLike != null && !nationalityLike.isBlank()) {
             String n = nationalityLike.trim().toLowerCase();
-            nats = java.util.Arrays.stream(ru.se.ifmo.is1.model.Country.values())
+            nats = java.util.Arrays.stream(Country.values())
                     .filter(c -> c.name().toLowerCase().contains(n))
                     .toList();
             if (nats.isEmpty()) return 0L;

@@ -5,6 +5,7 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.stereotype.Repository;
 import ru.se.ifmo.is1.model.Product;
+import ru.se.ifmo.is1.model.UnitOfMeasure;
 import ru.se.ifmo.is1.repository.util.SortSupport;
 
 import java.util.LinkedHashMap;
@@ -56,33 +57,15 @@ public class ProductRepository {
     }
 
 
-
-
-    public List<Product> findPageNative(int offset, int size, String sort, String dir) {
-        var built = SortSupport.build(SORT, sort, dir, "id");
-        String joins = String.join(" ", built.joins());
-        String sql = "select p.* from product p " + joins +
-                " order by " + built.orderBy() +
-                " limit :size offset :offset";
-        return s().createNativeQuery(sql, Product.class)
-                .setParameter("size", size)
-                .setParameter("offset", offset)
-                .getResultList();
-    }
-
-    public long countAllNative() {
-        return ((Number) s().createNativeQuery("select count(*) from product").getSingleResult()).longValue();
-    }
-
     public List<Product> findFiltered(
             String name, String partNumber, String unitOfMeasureLike,
             String organizationName, String personName,
             int offset, int limit, String sort, String dir
     ) {
-        java.util.List<ru.se.ifmo.is1.model.UnitOfMeasure> units = null;
+        java.util.List<UnitOfMeasure> units = null;
         if (unitOfMeasureLike != null && !unitOfMeasureLike.isBlank()) {
             String n = unitOfMeasureLike.trim().toLowerCase();
-            units = java.util.Arrays.stream(ru.se.ifmo.is1.model.UnitOfMeasure.values())
+            units = java.util.Arrays.stream(UnitOfMeasure.values())
                     .filter(u -> u.name().toLowerCase().contains(n))
                     .toList();
             if (units.isEmpty()) return java.util.List.of();
@@ -104,7 +87,7 @@ public class ProductRepository {
         if (personName != null && !personName.isBlank())
             hql.append(" and lower(o.name)       like lower(:personName) ");
 
-        var built = ru.se.ifmo.is1.repository.util.SortSupport.build(SORT, sort, dir, "id");
+        var built = SortSupport.build(SORT, sort, dir, "id");
         String orderBy = built.orderBy();
         hql.append(" order by ").append(orderBy);
 
@@ -124,10 +107,10 @@ public class ProductRepository {
             String name, String partNumber, String unitOfMeasureLike,
             String organizationName, String personName
     ) {
-        java.util.List<ru.se.ifmo.is1.model.UnitOfMeasure> units = null;
+        java.util.List<UnitOfMeasure> units = null;
         if (unitOfMeasureLike != null && !unitOfMeasureLike.isBlank()) {
             String n = unitOfMeasureLike.trim().toLowerCase();
-            units = java.util.Arrays.stream(ru.se.ifmo.is1.model.UnitOfMeasure.values())
+            units = java.util.Arrays.stream(UnitOfMeasure.values())
                     .filter(u -> u.name().toLowerCase().contains(n))
                     .toList();
             if (units.isEmpty()) return 0L;

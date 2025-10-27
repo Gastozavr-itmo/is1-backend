@@ -21,7 +21,7 @@ public class PersonController {
     }
 
     @GetMapping
-    public ResponseEntity<PageResponseDTO<ru.se.ifmo.is1.dto.person.PersonViewDTO>> list(
+    public ResponseEntity<PageResponseDTO<PersonViewDTO>> list(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size,
             @RequestParam(value = "sort", defaultValue = "id") String sort,
