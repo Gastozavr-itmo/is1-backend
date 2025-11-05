@@ -3,13 +3,10 @@ package ru.se.ifmo.is1.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.se.ifmo.is1.dto.paging.PageRequestDTO;
 import ru.se.ifmo.is1.dto.paging.PageResponseDTO;
 import ru.se.ifmo.is1.dto.product.ProductCreateDTO;
 import ru.se.ifmo.is1.dto.product.ProductViewDTO;
 import ru.se.ifmo.is1.service.ProductService;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/product")

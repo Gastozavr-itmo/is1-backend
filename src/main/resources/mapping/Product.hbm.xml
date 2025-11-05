@@ -15,7 +15,6 @@
             <column name="name"/>
         </property>
 
-        <!-- Coordinates как component (инлайн-колонки) -->
         <component name="coordinates" class="Coordinates">
             <property name="x" type="double" not-null="true">
                 <column name="coordinates_x"/>
@@ -37,7 +36,6 @@
             </type>
         </property>
 
-        <!-- производитель как FK на organization -->
         <many-to-one name="manufacturer" class="Organization"
                      column="manufacturer_id" not-null="true" fetch="select"/>
 
@@ -57,7 +55,6 @@
             <column name="part_number"/>
         </property>
 
-        <!-- владелец как FK на person (опционально) -->
         <many-to-one name="owner" class="Person"
                      column="owner_id" not-null="false" fetch="select"/>
     </class>

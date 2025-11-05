@@ -22,7 +22,6 @@ public class WebAppInitializer extends AbstractAnnotationConfigDispatcherServlet
 
     @Override
     protected Filter[] getServletFilters() {
-        // Готовим конфиг прямо здесь
         var cfg = new CorsConfiguration();
         cfg.setAllowCredentials(true);
         cfg.setAllowedOrigins(List.of("http://localhost:53062", "http://127.0.0.1:53062"));

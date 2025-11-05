@@ -21,7 +21,7 @@ public class ProductOpsService {
     private final ProductOpsRepository repo;
     private final ProductMapper mapper;
 
-    private final ChangePublisher changesBroadcaster = null;
+    private final ChangePublisher changesBroadcaster;
 
     @Transactional
     public Long deleteOneByRating(Number rating){

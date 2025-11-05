@@ -16,24 +16,40 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class OrganizationRepository {
     private final SessionFactory sf;
-    private Session s(){ return sf.getCurrentSession(); }
 
-    public Optional<Organization> findById(Integer id){ return Optional.ofNullable(s().get(Organization.class, id)); }
-    public Integer save(Organization e){ s().persist(e); return e.getId(); }
-    public Integer merge(Organization e){ return ((Organization) s().merge(e)).getId(); }
-    public void delete(Organization e){ s().remove(e); }
+    private Session s() {
+        return sf.getCurrentSession();
+    }
+
+    public Optional<Organization> findById(Integer id) {
+        return Optional.ofNullable(s().get(Organization.class, id));
+    }
+
+    public Integer save(Organization e) {
+        s().persist(e);
+        return e.getId();
+    }
+
+    public Integer merge(Organization e) {
+        return ((Organization) s().merge(e)).getId();
+    }
+
+    public void delete(Organization e) {
+        s().remove(e);
+    }
 
     private static final Map<String, SortSupport.Rule> SORT = new LinkedHashMap<>();
+
     static {
-        SORT.put("id",             SortSupport.Rule.column("o.id"));
-        SORT.put("name",           SortSupport.Rule.column("o.name"));
-        SORT.put("fullName",       SortSupport.Rule.column("o.fullName"));
+        SORT.put("id", SortSupport.Rule.column("o.id"));
+        SORT.put("name", SortSupport.Rule.column("o.name"));
+        SORT.put("fullName", SortSupport.Rule.column("o.fullName"));
         SORT.put("employeesCount", SortSupport.Rule.column("o.employeesCount"));
         SORT.put("annualTurnover", SortSupport.Rule.column("o.annualTurnover"));
-        SORT.put("rating",         SortSupport.Rule.column("o.rating"));
-        SORT.put("createdAt",   SortSupport.Rule.column("o.createdAt"));
-        SORT.put("officialCity",   SortSupport.Rule.column("o.officialAddress.town.name"));
-        SORT.put("postalCity",     SortSupport.Rule.column("o.postalAddress.town.name"));
+        SORT.put("rating", SortSupport.Rule.column("o.rating"));
+        SORT.put("createdAt", SortSupport.Rule.column("o.createdAt"));
+        SORT.put("officialCity", SortSupport.Rule.column("o.officialAddress.town.name"));
+        SORT.put("postalCity", SortSupport.Rule.column("o.postalAddress.town.name"));
 
     }
 
@@ -48,28 +64,28 @@ public class OrganizationRepository {
             String dir
     ) {
         StringBuilder hql = new StringBuilder("""
-        select o
-        from Organization o
-          left join o.officialAddress oa
-          left join oa.town oat
-          left join o.postalAddress pa
-          left join pa.town pat
-        where 1=1
-    """);
+                    select o
+                    from Organization o
+                      left join o.officialAddress oa
+                      left join oa.town oat
+                      left join o.postalAddress pa
+                      left join pa.town pat
+                    where 1=1
+                """);
 
-        if (name != null && !name.isBlank())        hql.append(" and lower(o.name)      like lower(:name) ");
-        if (fullName != null && !fullName.isBlank())hql.append(" and lower(o.fullName)  like lower(:fullName) ");
+        if (name != null && !name.isBlank()) hql.append(" and lower(o.name)      like lower(:name) ");
+        if (fullName != null && !fullName.isBlank()) hql.append(" and lower(o.fullName)  like lower(:fullName) ");
         if (officialTownName != null && !officialTownName.isBlank())
             hql.append(" and lower(oat.name)     like lower(:officialTownName) ");
         if (postalTownName != null && !postalTownName.isBlank())
             hql.append(" and lower(pat.name)     like lower(:postalTownName) ");
 
-        var built   = SortSupport.build(SORT, sort, dir, "id");
+        var built = SortSupport.build(SORT, sort, dir, "id");
         hql.append(" order by ").append(built.orderBy());
 
         var q = s().createQuery(hql.toString(), Organization.class);
 
-        if (name != null && !name.isBlank())         q.setParameter("name", "%" + name.trim() + "%");
+        if (name != null && !name.isBlank()) q.setParameter("name", "%" + name.trim() + "%");
         if (fullName != null && !fullName.isBlank()) q.setParameter("fullName", "%" + fullName.trim() + "%");
         if (officialTownName != null && !officialTownName.isBlank())
             q.setParameter("officialTownName", "%" + officialTownName.trim() + "%");
@@ -88,17 +104,17 @@ public class OrganizationRepository {
             String postalTownName
     ) {
         StringBuilder hql = new StringBuilder("""
-        select count(o.id)
-        from Organization o
-          left join o.officialAddress oa
-          left join oa.town oat
-          left join o.postalAddress pa
-          left join pa.town pat
-        where 1=1
-    """);
+                    select count(o.id)
+                    from Organization o
+                      left join o.officialAddress oa
+                      left join oa.town oat
+                      left join o.postalAddress pa
+                      left join pa.town pat
+                    where 1=1
+                """);
 
-        if (name != null && !name.isBlank())        hql.append(" and lower(o.name)      like lower(:name) ");
-        if (fullName != null && !fullName.isBlank())hql.append(" and lower(o.fullName)  like lower(:fullName) ");
+        if (name != null && !name.isBlank()) hql.append(" and lower(o.name)      like lower(:name) ");
+        if (fullName != null && !fullName.isBlank()) hql.append(" and lower(o.fullName)  like lower(:fullName) ");
         if (officialTownName != null && !officialTownName.isBlank())
             hql.append(" and lower(oat.name)     like lower(:officialTownName) ");
         if (postalTownName != null && !postalTownName.isBlank())
@@ -106,7 +122,7 @@ public class OrganizationRepository {
 
         var q = s().createQuery(hql.toString(), Long.class);
 
-        if (name != null && !name.isBlank())         q.setParameter("name", "%" + name.trim() + "%");
+        if (name != null && !name.isBlank()) q.setParameter("name", "%" + name.trim() + "%");
         if (fullName != null && !fullName.isBlank()) q.setParameter("fullName", "%" + fullName.trim() + "%");
         if (officialTownName != null && !officialTownName.isBlank())
             q.setParameter("officialTownName", "%" + officialTownName.trim() + "%");
