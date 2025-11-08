@@ -14,7 +14,6 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ImportHistoryService {
-
     private final ImportOperationRepository repo;
 
     @Transactional(readOnly = true)
@@ -24,8 +23,10 @@ public class ImportHistoryService {
 
     @Transactional(readOnly = true)
     public ImportOperation find(Long id) {
-        var op = repo.findById(id);
-        if (op == null) throw new IllegalArgumentException("Import operation not found: id=" + id);
+        ImportOperation op = repo.findById(id);
+        if (op == null) {
+            throw new IllegalArgumentException("Import operation not found: " + id);
+        }
         return op;
     }
 
