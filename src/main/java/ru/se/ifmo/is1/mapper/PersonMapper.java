@@ -3,7 +3,7 @@ package ru.se.ifmo.is1.mapper;
 import org.springframework.stereotype.Component;
 import ru.se.ifmo.is1.dto.person.PersonCreateDTO;
 import ru.se.ifmo.is1.dto.person.PersonViewDTO;
-import ru.se.ifmo.is1.dto.shared.LocationCreateDTO;
+import ru.se.ifmo.is1.dto.shared.LocationDTO;
 import ru.se.ifmo.is1.model.Location;
 import ru.se.ifmo.is1.model.Person;
 
@@ -15,7 +15,7 @@ public class PersonMapper {
         p.setName(dto.getName());
         p.setEyeColor(dto.getEyeColor());
         p.setHairColor(dto.getHairColor());
-        LocationCreateDTO ld = dto.getLocation();
+        LocationDTO ld = dto.getLocation();
         if (ld != null) {
             Location l = new Location();
             l.setX(ld.getX());

@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.Value;
 import ru.se.ifmo.is1.dto.organization.OrganizationViewDTO;
 import ru.se.ifmo.is1.dto.person.PersonViewDTO;
-import ru.se.ifmo.is1.dto.shared.CoordinatesCreateDTO;
+import ru.se.ifmo.is1.dto.shared.CoordinatesDTO;
 import ru.se.ifmo.is1.model.UnitOfMeasure;
 
 import java.util.Date;
@@ -16,7 +16,7 @@ import java.util.Date;
 public class ProductViewDTO {
     private Long id;
     private String name;
-    private CoordinatesCreateDTO coordinates;
+    private CoordinatesDTO coordinates;
     private Date creationDate;
     private UnitOfMeasure unitOfMeasure;
     private OrganizationViewDTO manufacturer;

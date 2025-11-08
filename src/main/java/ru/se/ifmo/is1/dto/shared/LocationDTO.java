@@ -6,7 +6,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AddressCreateDTO {
-    private String zipCode;
-    private TownCreateDTO town;
+public class LocationDTO {
+    private Long x;
+    private Long y;
+    private String name;
 }

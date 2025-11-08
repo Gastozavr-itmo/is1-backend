@@ -3,7 +3,7 @@ package ru.se.ifmo.is1.dto.organization;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Value;
-import ru.se.ifmo.is1.dto.shared.AddressCreateDTO;
+import ru.se.ifmo.is1.dto.shared.AddressDTO;
 
 @Value
 @Builder
@@ -11,11 +11,11 @@ import ru.se.ifmo.is1.dto.shared.AddressCreateDTO;
 public class OrganizationViewDTO {
     private Integer id;
     private String name;
-    private AddressCreateDTO officialAddress;
+    private AddressDTO officialAddress;
     private Double annualTurnover;
     private Integer employeesCount;
     private String fullName;
     private Integer rating;
 
-    AddressCreateDTO postalAddress;
+    AddressDTO postalAddress;
 }

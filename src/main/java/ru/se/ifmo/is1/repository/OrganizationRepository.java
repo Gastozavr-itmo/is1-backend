@@ -7,39 +7,43 @@ import org.springframework.stereotype.Repository;
 import ru.se.ifmo.is1.model.Organization;
 import ru.se.ifmo.is1.repository.util.SortSupport;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Repository
 @RequiredArgsConstructor
 public class OrganizationRepository {
     private final SessionFactory sf;
-
-    private Session s() {
-        return sf.getCurrentSession();
-    }
+    private Session s() { return sf.getCurrentSession(); }
 
     public Optional<Organization> findById(Integer id) {
         return Optional.ofNullable(s().get(Organization.class, id));
     }
 
-    public Integer save(Organization e) {
-        s().persist(e);
-        return e.getId();
+    public Integer save(Organization e) { s().persist(e); return e.getId(); }
+    public Integer merge(Organization e) { return ((Organization) s().merge(e)).getId(); }
+    public void delete(Organization e) { s().remove(e); }
+
+    public Organization findByFullNameExact(String fullName) {
+        return s().createQuery("""
+                select o from Organization o
+                where o.fullName = :fn
+                """, Organization.class)
+                .setParameter("fn", fullName)
+                .setMaxResults(1)
+                .uniqueResult();
     }
 
-    public Integer merge(Organization e) {
-        return ((Organization) s().merge(e)).getId();
-    }
-
-    public void delete(Organization e) {
-        s().remove(e);
+    public Organization findByFullNameNormalized(String normalizedLower) {
+        return s().createQuery("""
+                select o from Organization o
+                where function('regexp_replace', lower(o.fullName), '\\s+', ' ', 'g') = :norm
+                """, Organization.class)
+                .setParameter("norm", normalizedLower)
+                .setMaxResults(1)
+                .uniqueResult();
     }
 
     private static final Map<String, SortSupport.Rule> SORT = new LinkedHashMap<>();
-
     static {
         SORT.put("id", SortSupport.Rule.column("o.id"));
         SORT.put("name", SortSupport.Rule.column("o.name"));
@@ -50,29 +54,21 @@ public class OrganizationRepository {
         SORT.put("createdAt", SortSupport.Rule.column("o.createdAt"));
         SORT.put("officialCity", SortSupport.Rule.column("o.officialAddress.town.name"));
         SORT.put("postalCity", SortSupport.Rule.column("o.postalAddress.town.name"));
-
     }
 
     public List<Organization> findFiltered(
-            String name,
-            String fullName,
-            String officialTownName,
-            String postalTownName,
-            int offset,
-            int limit,
-            String sort,
-            String dir
+            String name, String fullName, String officialTownName, String postalTownName,
+            int offset, int limit, String sort, String dir
     ) {
         StringBuilder hql = new StringBuilder("""
-                    select o
-                    from Organization o
-                      left join o.officialAddress oa
-                      left join oa.town oat
-                      left join o.postalAddress pa
-                      left join pa.town pat
-                    where 1=1
-                """);
-
+            select o
+            from Organization o
+              left join o.officialAddress oa
+              left join oa.town oat
+              left join o.postalAddress pa
+              left join pa.town pat
+            where 1=1
+        """);
         if (name != null && !name.isBlank()) hql.append(" and lower(o.name)      like lower(:name) ");
         if (fullName != null && !fullName.isBlank()) hql.append(" and lower(o.fullName)  like lower(:fullName) ");
         if (officialTownName != null && !officialTownName.isBlank())
@@ -84,7 +80,6 @@ public class OrganizationRepository {
         hql.append(" order by ").append(built.orderBy());
 
         var q = s().createQuery(hql.toString(), Organization.class);
-
         if (name != null && !name.isBlank()) q.setParameter("name", "%" + name.trim() + "%");
         if (fullName != null && !fullName.isBlank()) q.setParameter("fullName", "%" + fullName.trim() + "%");
         if (officialTownName != null && !officialTownName.isBlank())
@@ -92,27 +87,23 @@ public class OrganizationRepository {
         if (postalTownName != null && !postalTownName.isBlank())
             q.setParameter("postalTownName", "%" + postalTownName.trim() + "%");
 
-        q.setFirstResult(Math.max(offset, 0));
-        q.setMaxResults(Math.max(limit, 1));
+        q.setFirstResult(Math.max(offset,0));
+        q.setMaxResults(Math.max(limit,1));
         return q.list();
     }
 
     public long countFiltered(
-            String name,
-            String fullName,
-            String officialTownName,
-            String postalTownName
+            String name, String fullName, String officialTownName, String postalTownName
     ) {
         StringBuilder hql = new StringBuilder("""
-                    select count(o.id)
-                    from Organization o
-                      left join o.officialAddress oa
-                      left join oa.town oat
-                      left join o.postalAddress pa
-                      left join pa.town pat
-                    where 1=1
-                """);
-
+            select count(o.id)
+            from Organization o
+              left join o.officialAddress oa
+              left join oa.town oat
+              left join o.postalAddress pa
+              left join pa.town pat
+            where 1=1
+        """);
         if (name != null && !name.isBlank()) hql.append(" and lower(o.name)      like lower(:name) ");
         if (fullName != null && !fullName.isBlank()) hql.append(" and lower(o.fullName)  like lower(:fullName) ");
         if (officialTownName != null && !officialTownName.isBlank())
@@ -121,7 +112,6 @@ public class OrganizationRepository {
             hql.append(" and lower(pat.name)     like lower(:postalTownName) ");
 
         var q = s().createQuery(hql.toString(), Long.class);
-
         if (name != null && !name.isBlank()) q.setParameter("name", "%" + name.trim() + "%");
         if (fullName != null && !fullName.isBlank()) q.setParameter("fullName", "%" + fullName.trim() + "%");
         if (officialTownName != null && !officialTownName.isBlank())
@@ -131,5 +121,4 @@ public class OrganizationRepository {
 
         return q.getSingleResult();
     }
-
 }

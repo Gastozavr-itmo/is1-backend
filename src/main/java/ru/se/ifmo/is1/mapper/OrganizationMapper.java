@@ -3,8 +3,8 @@ package ru.se.ifmo.is1.mapper;
 import org.springframework.stereotype.Component;
 import ru.se.ifmo.is1.dto.organization.OrganizationCreateDTO;
 import ru.se.ifmo.is1.dto.organization.OrganizationViewDTO;
-import ru.se.ifmo.is1.dto.shared.AddressCreateDTO;
-import ru.se.ifmo.is1.dto.shared.TownCreateDTO;
+import ru.se.ifmo.is1.dto.shared.AddressDTO;
+import ru.se.ifmo.is1.dto.shared.LocationDTO;
 import ru.se.ifmo.is1.model.Address;
 import ru.se.ifmo.is1.model.Location;
 import ru.se.ifmo.is1.model.Organization;
@@ -24,11 +24,11 @@ public class OrganizationMapper {
         return o;
     }
 
-    private Address toAddress(AddressCreateDTO dto) {
+    private Address toAddress(AddressDTO dto) {
         if (dto == null) return null;
         Address a = new Address();
         a.setZipCode(dto.getZipCode());
-        TownCreateDTO t = dto.getTown();
+        LocationDTO t = dto.getTown();
         if (t != null) {
             Location loc = new Location();
             loc.setX(t.getX());
@@ -42,37 +42,37 @@ public class OrganizationMapper {
     public OrganizationViewDTO toView(Organization o) {
         if (o == null) return null;
 
-        AddressCreateDTO officialAddressDto = null;
+        AddressDTO officialAddressDto = null;
         if (o.getOfficialAddress() != null) {
             var a = o.getOfficialAddress();
-            TownCreateDTO townDto = null;
+            LocationDTO townDto = null;
             if (a.getTown() != null) {
                 var t = a.getTown();
-                townDto = TownCreateDTO.builder()
+                townDto = LocationDTO.builder()
                         .x(t.getX())
                         .y(t.getY())
                         .name(t.getName())
                         .build();
             }
-            officialAddressDto = AddressCreateDTO.builder()
+            officialAddressDto = AddressDTO.builder()
                     .zipCode(a.getZipCode())
                     .town(townDto)
                     .build();
         }
 
-        AddressCreateDTO postalAddressDto = null;
+        AddressDTO postalAddressDto = null;
         if (o.getPostalAddress() != null) {
             var a = o.getPostalAddress();
-            TownCreateDTO townDto = null;
+            LocationDTO townDto = null;
             if (a.getTown() != null) {
                 var t = a.getTown();
-                townDto = TownCreateDTO.builder()
+                townDto = LocationDTO.builder()
                         .x(t.getX())
                         .y(t.getY())
                         .name(t.getName())
                         .build();
             }
-            postalAddressDto = AddressCreateDTO.builder()
+            postalAddressDto = AddressDTO.builder()
                     .zipCode(a.getZipCode())
                     .town(townDto)
                     .build();

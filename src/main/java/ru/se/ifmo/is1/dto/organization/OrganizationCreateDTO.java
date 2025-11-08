@@ -1,7 +1,7 @@
 package ru.se.ifmo.is1.dto.organization;
 
 import lombok.*;
-import ru.se.ifmo.is1.dto.shared.AddressCreateDTO;
+import ru.se.ifmo.is1.dto.shared.AddressDTO;
 
 @Data
 @NoArgsConstructor
@@ -13,6 +13,6 @@ public class OrganizationCreateDTO {
     private Integer employeesCount;
     private String fullName;
     private Integer rating;
-    private AddressCreateDTO officialAddress;
-    private AddressCreateDTO postalAddress;
+    private AddressDTO officialAddress;
+    private AddressDTO postalAddress;
 }

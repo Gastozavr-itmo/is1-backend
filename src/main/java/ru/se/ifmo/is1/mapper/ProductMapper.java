@@ -18,7 +18,7 @@ public class ProductMapper {
         Product p = new Product();
         p.setName(dto.getName());
         if (dto.getCoordinates() != null) {
-            CoordinatesCreateDTO cd = dto.getCoordinates();
+            CoordinatesDTO cd = dto.getCoordinates();
             Coordinates coords = new Coordinates();
             coords.setX(cd.getX());
             coords.setY(cd.getY());
@@ -50,7 +50,7 @@ public class ProductMapper {
         return ProductViewDTO.builder()
                 .id(p.getId())
                 .name(p.getName())
-                .coordinates(CoordinatesCreateDTO.builder()
+                .coordinates(CoordinatesDTO.builder()
                         .x(p.getCoordinates().getX())
                         .y(p.getCoordinates().getY())
                         .build())

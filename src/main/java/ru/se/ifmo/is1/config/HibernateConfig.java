@@ -33,7 +33,9 @@ public class HibernateConfig {
         sf.setMappingLocations(
                 new ClassPathResource("mapping/Product.hbm.xml"),
                 new ClassPathResource("mapping/Organization.hbm.xml"),
-                new ClassPathResource("mapping/Person.hbm.xml")
+                new ClassPathResource("mapping/Person.hbm.xml"),
+                new ClassPathResource("mapping/import-operation.hbm.xml")
+
         );
 
         Properties p = new Properties();

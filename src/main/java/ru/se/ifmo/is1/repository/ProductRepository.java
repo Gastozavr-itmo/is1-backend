@@ -4,43 +4,38 @@ import lombok.RequiredArgsConstructor;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.stereotype.Repository;
+import ru.se.ifmo.is1.model.Organization;
 import ru.se.ifmo.is1.model.Product;
 import ru.se.ifmo.is1.model.UnitOfMeasure;
 import ru.se.ifmo.is1.repository.util.SortSupport;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Repository
 @RequiredArgsConstructor
 public class ProductRepository {
     private final SessionFactory sf;
+    private Session s() { return sf.getCurrentSession(); }
 
-    private Session s() {
-        return sf.getCurrentSession();
-    }
+    public Optional<Product> findById(Long id) { return Optional.ofNullable(s().get(Product.class, id)); }
+    public Long save(Product e) { s().persist(e); return e.getId(); }
+    public Long merge(Product e) { return ((Product) s().merge(e)).getId(); }
+    public void delete(Product e) { s().remove(e); }
 
-    public Optional<Product> findById(Long id) {
-        return Optional.ofNullable(s().get(Product.class, id));
-    }
-
-    public Long save(Product e) {
-        s().persist(e);
-        return e.getId();
-    }
-
-    public Long merge(Product e) {
-        return ((Product) s().merge(e)).getId();
-    }
-
-    public void delete(Product e) {
-        s().remove(e);
+    public Product findByManufacturerAndNormalizedPartNumber(Organization m, String partNumberNorm) {
+        if (m == null || partNumberNorm == null) return null;
+        return s().createQuery("""
+                select p from Product p
+                where p.manufacturer = :m
+                  and function('regexp_replace', lower(p.partNumber), '[\\s\\u2013\\u2014]+', '-', 'g') = :pn
+                """, Product.class)
+                .setParameter("m", m)
+                .setParameter("pn", partNumberNorm.toLowerCase())
+                .setMaxResults(1)
+                .uniqueResult();
     }
 
     private static final Map<String, SortSupport.Rule> SORT = new LinkedHashMap<>();
-
     static {
         SORT.put("id",            SortSupport.Rule.column("p.id"));
         SORT.put("name",          SortSupport.Rule.column("p.name"));
@@ -49,57 +44,52 @@ public class ProductRepository {
         SORT.put("partNumber",    SortSupport.Rule.column("p.partNumber"));
         SORT.put("unitOfMeasure", SortSupport.Rule.column("p.unitOfMeasure"));
         SORT.put("creationDate",  SortSupport.Rule.column("p.creationDate"));
-
-        SORT.put("owner", SortSupport.Rule.column("p.owner.name"));
-        SORT.put("manufacturer", SortSupport.Rule.column("p.manufacturer.name"));
-
-
+        SORT.put("owner",         SortSupport.Rule.column("p.owner.name"));
+        SORT.put("manufacturer",  SortSupport.Rule.column("p.manufacturer.name"));
     }
-
 
     public List<Product> findFiltered(
             String name, String partNumber, String unitOfMeasureLike,
             String organizationName, String personName,
             int offset, int limit, String sort, String dir
     ) {
-        java.util.List<UnitOfMeasure> units = null;
+        List<UnitOfMeasure> units = null;
         if (unitOfMeasureLike != null && !unitOfMeasureLike.isBlank()) {
             String n = unitOfMeasureLike.trim().toLowerCase();
-            units = java.util.Arrays.stream(UnitOfMeasure.values())
+            units = Arrays.stream(UnitOfMeasure.values())
                     .filter(u -> u.name().toLowerCase().contains(n))
                     .toList();
-            if (units.isEmpty()) return java.util.List.of();
+            if (units.isEmpty()) return List.of();
         }
 
         StringBuilder hql = new StringBuilder("""
-        select p
-        from Product p
-          left join p.manufacturer m
-          left join p.owner o
-        where 1=1
-    """);
+            select p
+            from Product p
+              left join p.manufacturer m
+              left join p.owner o
+            where 1=1
+        """);
 
-        if (name != null && !name.isBlank())              hql.append(" and lower(p.name)       like lower(:name) ");
-        if (partNumber != null && !partNumber.isBlank())  hql.append(" and lower(p.partNumber) like lower(:partNumber) ");
-        if (units != null)                                 hql.append(" and p.unitOfMeasure in (:units) ");
+        if (name != null && !name.isBlank())             hql.append(" and lower(p.name)       like lower(:name) ");
+        if (partNumber != null && !partNumber.isBlank()) hql.append(" and lower(p.partNumber) like lower(:partNumber) ");
+        if (units != null)                                hql.append(" and p.unitOfMeasure in (:units) ");
         if (organizationName != null && !organizationName.isBlank())
             hql.append(" and lower(m.name)       like lower(:orgName) ");
         if (personName != null && !personName.isBlank())
             hql.append(" and lower(o.name)       like lower(:personName) ");
 
         var built = SortSupport.build(SORT, sort, dir, "id");
-        String orderBy = built.orderBy();
-        hql.append(" order by ").append(orderBy);
+        hql.append(" order by ").append(built.orderBy());
 
         var q = s().createQuery(hql.toString(), Product.class);
-        if (name != null && !name.isBlank())              q.setParameter("name", "%" + name.trim() + "%");
-        if (partNumber != null && !partNumber.isBlank())  q.setParameter("partNumber", "%" + partNumber.trim() + "%");
-        if (units != null)                                 q.setParameterList("units", units);
+        if (name != null && !name.isBlank())             q.setParameter("name", "%" + name.trim() + "%");
+        if (partNumber != null && !partNumber.isBlank()) q.setParameter("partNumber", "%" + partNumber.trim() + "%");
+        if (units != null)                                q.setParameterList("units", units);
         if (organizationName != null && !organizationName.isBlank()) q.setParameter("orgName", "%" + organizationName.trim() + "%");
         if (personName != null && !personName.isBlank())             q.setParameter("personName", "%" + personName.trim() + "%");
 
-        q.setFirstResult(Math.max(offset, 0));
-        q.setMaxResults(Math.max(limit, 1));
+        q.setFirstResult(Math.max(offset,0));
+        q.setMaxResults(Math.max(limit,1));
         return q.list();
     }
 
@@ -107,39 +97,38 @@ public class ProductRepository {
             String name, String partNumber, String unitOfMeasureLike,
             String organizationName, String personName
     ) {
-        java.util.List<UnitOfMeasure> units = null;
+        List<UnitOfMeasure> units = null;
         if (unitOfMeasureLike != null && !unitOfMeasureLike.isBlank()) {
             String n = unitOfMeasureLike.trim().toLowerCase();
-            units = java.util.Arrays.stream(UnitOfMeasure.values())
+            units = Arrays.stream(UnitOfMeasure.values())
                     .filter(u -> u.name().toLowerCase().contains(n))
                     .toList();
             if (units.isEmpty()) return 0L;
         }
 
         StringBuilder hql = new StringBuilder("""
-        select count(p.id)
-        from Product p
-          left join p.manufacturer m
-          left join p.owner o
-        where 1=1
-    """);
+            select count(p.id)
+            from Product p
+              left join p.manufacturer m
+              left join p.owner o
+            where 1=1
+        """);
 
-        if (name != null && !name.isBlank())              hql.append(" and lower(p.name)       like lower(:name) ");
-        if (partNumber != null && !partNumber.isBlank())  hql.append(" and lower(p.partNumber) like lower(:partNumber) ");
-        if (units != null)                                 hql.append(" and p.unitOfMeasure in (:units) ");
+        if (name != null && !name.isBlank())             hql.append(" and lower(p.name)       like lower(:name) ");
+        if (partNumber != null && !partNumber.isBlank()) hql.append(" and lower(p.partNumber) like lower(:partNumber) ");
+        if (units != null)                                hql.append(" and p.unitOfMeasure in (:units) ");
         if (organizationName != null && !organizationName.isBlank())
             hql.append(" and lower(m.name)       like lower(:orgName) ");
         if (personName != null && !personName.isBlank())
             hql.append(" and lower(o.name)       like lower(:personName) ");
 
         var q = s().createQuery(hql.toString(), Long.class);
-        if (name != null && !name.isBlank())              q.setParameter("name", "%" + name.trim() + "%");
-        if (partNumber != null && !partNumber.isBlank())  q.setParameter("partNumber", "%" + partNumber.trim() + "%");
-        if (units != null)                                 q.setParameterList("units", units);
+        if (name != null && !name.isBlank())             q.setParameter("name", "%" + name.trim() + "%");
+        if (partNumber != null && !partNumber.isBlank()) q.setParameter("partNumber", "%" + partNumber.trim() + "%");
+        if (units != null)                                q.setParameterList("units", units);
         if (organizationName != null && !organizationName.isBlank()) q.setParameter("orgName", "%" + organizationName.trim() + "%");
         if (personName != null && !personName.isBlank())             q.setParameter("personName", "%" + personName.trim() + "%");
 
         return q.getSingleResult();
     }
-
 }

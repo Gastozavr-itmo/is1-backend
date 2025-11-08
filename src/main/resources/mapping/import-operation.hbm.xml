@@ -1,0 +1,23 @@
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="ru.se.ifmo.is1.model">
+    <class name="ImportOperation" table="import_operation" dynamic-insert="true" dynamic-update="true">
+
+        <id name="id" column="id" type="long">
+            <generator class="identity"/>
+        </id>
+
+        <property name="status" column="status" not-null="true">
+            <type name="org.hibernate.type.EnumType">
+                <param name="enumClass">ru.se.ifmo.is1.model.ImportStatus</param>
+                <param name="useNamed">true</param>
+            </type>
+        </property>
+
+        <property name="createdCount" column="created_count" type="integer" not-null="false"/>
+        <property name="startedAt"  column="started_at"  type="java.time.LocalDateTime" not-null="true"/>
+        <property name="finishedAt" column="finished_at" type="java.time.LocalDateTime" not-null="true"/>
+
+    </class>
+</hibernate-mapping>
