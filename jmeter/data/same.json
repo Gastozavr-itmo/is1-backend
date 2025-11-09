@@ -1,0 +1,96 @@
+[
+  {
+    "name": "Common Bottle",
+    "coordinates": {
+      "x": 80.0,
+      "y": 9
+    },
+    "unitOfMeasure": "MILLILITERS",
+    "manufacturer": {
+      "name": "Polar",
+      "fullName": "Polar AB",
+      "annualTurnover": 6400000,
+      "employeesCount": 140,
+      "rating": 4,
+      "officialAddress": {
+        "zipCode": "11000",
+        "town": {
+          "name": "STOCKHOLM-CENTER",
+          "x": 20,
+          "y": 30
+        }
+      },
+      "postalAddress": {
+        "zipCode": "11001",
+        "town": {
+          "name": "STOCKHOLM-POST",
+          "x": 21,
+          "y": 31
+        }
+      }
+    },
+    "price": 1199,
+    "manufactureCost": 290,
+    "rating": 8,
+    "partNumber": "CMN-A-3001",
+    "owner": {
+      "name": "Alex",
+      "nationality": "RUSSIA",
+      "eyeColor": "BROWN",
+      "hairColor": "RED",
+      "height": 182,
+      "location": {
+        "name": "SPB-NORTH",
+        "x": 60,
+        "y": 80
+      }
+    }
+  },
+  {
+    "name": "Common Shaker",
+    "coordinates": {
+      "x": 95.0,
+      "y": 14
+    },
+    "unitOfMeasure": "MILLIGRAMS",
+    "manufacturer": {
+      "name": "Aurora",
+      "fullName": "Aurora SpA",
+      "annualTurnover": 9100000,
+      "employeesCount": 220,
+      "rating": 5,
+      "officialAddress": {
+        "zipCode": "20100",
+        "town": {
+          "name": "MILANO-CENTER",
+          "x": 25,
+          "y": 35
+        }
+      },
+      "postalAddress": {
+        "zipCode": "20101",
+        "town": {
+          "name": "MILANO-POST",
+          "x": 26,
+          "y": 36
+        }
+      }
+    },
+    "price": 1799,
+    "manufactureCost": 500,
+    "rating": 9,
+    "partNumber": "CMN-B-3002",
+    "owner": {
+      "name": "Ilya",
+      "nationality": "RUSSIA",
+      "eyeColor": "WHITE",
+      "hairColor": "BLACK",
+      "height": 178,
+      "location": {
+        "name": "MSK-SOUTH",
+        "x": 45,
+        "y": 55
+      }
+    }
+  }
+]

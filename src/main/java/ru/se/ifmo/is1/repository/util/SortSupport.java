@@ -23,5 +23,6 @@ public class SortSupport {
         return new Built(orderBy, joins);
     }
 
-    public record Built(String orderBy, Set<String> joins) {}
+    public record Built(String orderBy, Set<String> joins) {
+    }
 }

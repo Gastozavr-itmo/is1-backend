@@ -10,13 +10,15 @@ public class ProductImportDTO {
     @NotBlank
     private String name;
 
-    @Valid @NotNull
+    @Valid
+    @NotNull
     private CoordinatesDTO coordinates;
 
     @NotNull
     private String unitOfMeasure; // конвертируем к enum в маппере
 
-    @Valid @NotNull
+    @Valid
+    @NotNull
     private OrganizationImportDTO manufacturer;
 
     @Positive

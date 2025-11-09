@@ -28,7 +28,7 @@ public class OrganizationController {
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size,
             @RequestParam(value = "sort", defaultValue = "id") String sort,
-            @RequestParam(value = "dir",  defaultValue = "asc") String dir,
+            @RequestParam(value = "dir", defaultValue = "asc") String dir,
 
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "fullName", required = false) String fullName,
@@ -38,7 +38,6 @@ public class OrganizationController {
         var resp = service.list(page, size, sort, dir, name, fullName, officialTownName, postalTownName);
         return org.springframework.http.ResponseEntity.ok(resp);
     }
-
 
 
     @PostMapping

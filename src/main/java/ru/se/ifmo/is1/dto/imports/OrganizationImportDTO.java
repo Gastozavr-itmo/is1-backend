@@ -21,9 +21,11 @@ public class OrganizationImportDTO {
     @Positive
     private Integer rating;
 
-    @Valid @NotNull
+    @Valid
+    @NotNull
     private AddressDTO officialAddress;
 
-    @Valid @NotNull
+    @Valid
+    @NotNull
     private AddressDTO postalAddress;
 }

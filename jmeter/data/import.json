@@ -1,0 +1,96 @@
+[
+  {
+    "name": "Demo3 A",
+    "coordinates": {
+      "x": 123.4,
+      "y": 10
+    },
+    "unitOfMeasure": "MILLILITERS",
+    "manufacturer": {
+      "name": "ACMEwow1",
+      "fullName": "wow1",
+      "annualTurnover": 12500000.0,
+      "employeesCount": 250,
+      "rating": 5,
+      "officialAddress": {
+        "zipCode": "190000",
+        "town": {
+          "name": "SPB-CENTER",
+          "x": 10,
+          "y": 20
+        }
+      },
+      "postalAddress": {
+        "zipCode": "190000",
+        "town": {
+          "name": "SPB-CENTER",
+          "x": 10,
+          "y": 20
+        }
+      }
+    },
+    "price": 1999,
+    "manufactureCost": 350,
+    "rating": 10,
+    "partNumber": "ACM-A-03403",
+    "owner": {
+      "name": "Andrew",
+      "nationality": "RUSSIA",
+      "eyeColor": "BLACK",
+      "hairColor": "BLACK",
+      "height": 175.5,
+      "location": {
+        "name": "SPB-CENTER",
+        "x": 100,
+        "y": 200
+      }
+    }
+  },
+  {
+    "name": "Demo B",
+    "coordinates": {
+      "x": 111.0,
+      "y": 11
+    },
+    "unitOfMeasure": "MILLILITERS",
+    "manufacturer": {
+      "name": "ACME",
+      "fullName": "ACME Limited",
+      "annualTurnover": 12500000.0,
+      "employeesCount": 250,
+      "rating": 5,
+      "officialAddress": {
+        "zipCode": "190000",
+        "town": {
+          "name": "SPB-CENTER",
+          "x": 10,
+          "y": 20
+        }
+      },
+      "postalAddress": {
+        "zipCode": "190000",
+        "town": {
+          "name": "SPB-CENTER",
+          "x": 10,
+          "y": 20
+        }
+      }
+    },
+    "price": 2099,
+    "manufactureCost": 355,
+    "rating": 11,
+    "partNumber": "ACM-B-4002",
+    "owner": {
+      "name": "LEE",
+      "nationality": "CHINA",
+      "eyeColor": "WHITE",
+      "hairColor": "BROWN",
+      "height": 168.0,
+      "location": {
+        "name": "MSK-NORTH",
+        "x": 30,
+        "y": 40
+      }
+    }
+  }
+]

@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 @RestController
-@RequestMapping("/import/products")
+@RequestMapping("/import/product")
 public class ImportProductsController {
 
     private final ObjectMapper objectMapper;
@@ -63,7 +63,8 @@ public class ImportProductsController {
 
         List<ProductImportDTO> items;
         try (InputStream is = file.getInputStream()) {
-            items = objectMapper.readValue(is, new TypeReference<>() {});
+            items = objectMapper.readValue(is, new TypeReference<>() {
+            });
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(
                     ImportResponse.failed(0, List.of(

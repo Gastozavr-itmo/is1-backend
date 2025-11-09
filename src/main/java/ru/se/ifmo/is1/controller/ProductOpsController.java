@@ -17,6 +17,7 @@ import java.util.Map;
 public class ProductOpsController {
 
     private final ProductOpsService service;
+
     private PageRequestDTO pr(Integer page, Integer size, String sort, String dir) {
         int p = page != null ? page : 0;
         int s = size != null ? size : 10;
@@ -38,8 +39,8 @@ public class ProductOpsController {
             @RequestParam(value = "page", required = false) Integer page,
             @RequestParam(value = "size", required = false) Integer size,
             @RequestParam(value = "sort", required = false) String sort,
-            @RequestParam(value = "dir",  required = false) String dir
-    ){
+            @RequestParam(value = "dir", required = false) String dir
+    ) {
         return service.groupByManufactureCost(pr(page, size, sort, dir));
     }
 
@@ -49,8 +50,8 @@ public class ProductOpsController {
             @RequestParam(value = "page", required = false) Integer page,
             @RequestParam(value = "size", required = false) Integer size,
             @RequestParam(value = "sort", required = false) String sort,
-            @RequestParam(value = "dir",  required = false) String dir
-    ){
+            @RequestParam(value = "dir", required = false) String dir
+    ) {
         return service.partNumberGt(pn, pr(page, size, sort, dir));
     }
 
@@ -60,8 +61,8 @@ public class ProductOpsController {
             @RequestParam(value = "page", required = false) Integer page,
             @RequestParam(value = "size", required = false) Integer size,
             @RequestParam(value = "sort", required = false) String sort,
-            @RequestParam(value = "dir",  required = false) String dir
-    ){
+            @RequestParam(value = "dir", required = false) String dir
+    ) {
         return service.byManufacturer(orgId, pr(page, size, sort, dir));
     }
 
@@ -72,8 +73,8 @@ public class ProductOpsController {
             @RequestParam(value = "page", required = false) Integer page,
             @RequestParam(value = "size", required = false) Integer size,
             @RequestParam(value = "sort", required = false) String sort,
-            @RequestParam(value = "dir",  required = false) String dir
-    ){
+            @RequestParam(value = "dir", required = false) String dir
+    ) {
         return service.byPriceRange(min, max, pr(page, size, sort, dir));
     }
 }

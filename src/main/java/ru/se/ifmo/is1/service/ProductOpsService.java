@@ -24,7 +24,7 @@ public class ProductOpsService {
     private final ChangePublisher changesBroadcaster;
 
     @Transactional
-    public Long deleteOneByRating(Number rating){
+    public Long deleteOneByRating(Number rating) {
         Long id = repo.deleteOneByRating(rating);
         if (id != null && changesBroadcaster != null) {
             changesBroadcaster.broadcast("product", "deleted", id);
@@ -33,7 +33,7 @@ public class ProductOpsService {
     }
 
     @Transactional
-    public PageResponseDTO<ManufactureCostGroupDTO> groupByManufactureCost(PageRequestDTO pr){
+    public PageResponseDTO<ManufactureCostGroupDTO> groupByManufactureCost(PageRequestDTO pr) {
         int page = Math.max(0, pr.getPage());
         int size = Math.max(1, pr.getSize());
         boolean asc = !"desc".equalsIgnoreCase(pr.getDir());
@@ -48,7 +48,7 @@ public class ProductOpsService {
     }
 
     @Transactional
-    public PageResponseDTO<?> partNumberGt(String pn, PageRequestDTO pr){
+    public PageResponseDTO<?> partNumberGt(String pn, PageRequestDTO pr) {
         int page = Math.max(0, pr.getPage());
         int size = Math.max(1, pr.getSize());
         boolean asc = !"desc".equalsIgnoreCase(pr.getDir());
@@ -61,7 +61,7 @@ public class ProductOpsService {
     }
 
     @Transactional
-    public PageResponseDTO<?> byManufacturer(Integer orgId, PageRequestDTO pr){
+    public PageResponseDTO<?> byManufacturer(Integer orgId, PageRequestDTO pr) {
         int page = Math.max(0, pr.getPage());
         int size = Math.max(1, pr.getSize());
         boolean asc = !"desc".equalsIgnoreCase(pr.getDir());
@@ -74,7 +74,7 @@ public class ProductOpsService {
     }
 
     @Transactional
-    public PageResponseDTO<?> byPriceRange(Number min, Number max, PageRequestDTO pr){
+    public PageResponseDTO<?> byPriceRange(Number min, Number max, PageRequestDTO pr) {
         int page = Math.max(0, pr.getPage());
         int size = Math.max(1, pr.getSize());
         boolean asc = !"desc".equalsIgnoreCase(pr.getDir());

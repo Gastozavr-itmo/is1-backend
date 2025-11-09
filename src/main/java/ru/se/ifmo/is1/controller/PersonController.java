@@ -25,11 +25,11 @@ public class PersonController {
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size,
             @RequestParam(value = "sort", defaultValue = "id") String sort,
-            @RequestParam(value = "dir",  defaultValue = "asc") String dir,
+            @RequestParam(value = "dir", defaultValue = "asc") String dir,
 
-            @RequestParam(value = "name",        required = false) String name,
-            @RequestParam(value = "eyeColor",    required = false) String eyeColorLike,
-            @RequestParam(value = "hairColor",   required = false) String hairColorLike,
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "eyeColor", required = false) String eyeColorLike,
+            @RequestParam(value = "hairColor", required = false) String hairColorLike,
             @RequestParam(value = "nationality", required = false) String nationalityLike,
             @RequestParam(value = "locationName", required = false) String locationName
     ) {
@@ -37,9 +37,6 @@ public class PersonController {
                 name, eyeColorLike, hairColorLike, nationalityLike, locationName);
         return ResponseEntity.ok(pageResp);
     }
-
-
-
 
 
     @PostMapping

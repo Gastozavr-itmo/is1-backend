@@ -3,6 +3,7 @@ package ru.se.ifmo.is1.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.se.ifmo.is1.concurrency.KeyLock;
 import ru.se.ifmo.is1.dto.organization.OrganizationCreateDTO;
 import ru.se.ifmo.is1.dto.organization.OrganizationViewDTO;
 
@@ -40,7 +41,7 @@ public class OrganizationService {
     ) {
         int offset = Math.max(page, 0) * Math.max(size, 1);
 
-        var rows  = repo.findFiltered(name, fullName, officialTownName, postalTownName, offset, size, sort, dir);
+        var rows = repo.findFiltered(name, fullName, officialTownName, postalTownName, offset, size, sort, dir);
         long total = repo.countFiltered(name, fullName, officialTownName, postalTownName);
 
         var items = rows.stream().map(mapper::toView).toList();
@@ -48,26 +49,50 @@ public class OrganizationService {
     }
 
 
-
-
+    @KeyLock("'org:uniq:fullName:' + T(ru.se.ifmo.is1.concurrency.LockKeys).norm(#p0.fullName)")
     @Transactional
     public Integer create(OrganizationCreateDTO dto) {
         Organization o = mapper.toEntity(dto);
         validate(o);
+
+        if (o.getFullName() == null || o.getFullName().trim().isEmpty()) {
+            throw new IllegalArgumentException("fullName required");
+        }
+        Organization existing = repo.findByBusinessKey(o.getFullName());
+        if (existing != null) {
+            throw new IllegalArgumentException("Organization with same fullName already exists");
+        }
+
         Integer id = repo.save(o);
         changes.broadcast("organization", "created", id);
         return id;
     }
 
+    @KeyLock(
+            "{ " +
+                    "'org:id:' + #p0, " +
+                    "'org:uniq:fullName:' + T(ru.se.ifmo.is1.concurrency.LockKeys).norm(#p1.fullName)" +
+                    " }"
+    )
     @Transactional
     public void update(Integer id, OrganizationCreateDTO dto) {
         Organization o = mapper.toEntity(dto);
         o.setId(id);
         validate(o);
+
+        if (o.getFullName() == null || o.getFullName().trim().isEmpty()) {
+            throw new IllegalArgumentException("fullName required");
+        }
+        Organization existing = repo.findByBusinessKey(o.getFullName());
+        if (existing != null && existing.getId() != id) {
+            throw new IllegalArgumentException("Another organization with same fullName already exists");
+        }
+
         repo.merge(o);
         changes.broadcast("organization", "updated", id);
     }
 
+    @KeyLock("'org:id:' + #p0")
     @Transactional
     public void delete(Integer id) {
         var e = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Organization not found"));

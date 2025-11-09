@@ -1,0 +1,12 @@
+package ru.se.ifmo.is1.exception;
+
+public enum ApiErrorCode {
+    VALIDATION_ERROR,
+    ENTITY_NOT_FOUND,
+    UNIQUE_CONSTRAINT_VIOLATION,
+    DATA_INTEGRITY_VIOLATION,
+    ACCESS_DENIED,
+    AUTHENTICATION_FAILED,
+    BAD_REQUEST,
+    INTERNAL_ERROR
+}

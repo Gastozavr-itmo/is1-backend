@@ -27,6 +27,7 @@ public class PersonMapper {
         p.setNationality(dto.getNationality());
         return p;
     }
+
     public PersonViewDTO toView(Person p) {
         return PersonViewDTO.builder()
                 .id(p.getId())

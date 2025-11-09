@@ -33,11 +33,13 @@ public class ImportMapper {
         if (v instanceof Number) return ((Number) v).longValue();
         return Long.valueOf(v.toString());
     }
+
     private Integer asInt(Object v) {
         if (v == null) return null;
         if (v instanceof Number) return ((Number) v).intValue();
         return Integer.valueOf(v.toString());
     }
+
     private Double asDouble(Object v) {
         if (v == null) return null;
         if (v instanceof Number) return ((Number) v).doubleValue();
@@ -49,7 +51,7 @@ public class ImportMapper {
         Coordinates e = new Coordinates();
 
         Double x = asDouble(dto.getX());
-        Long   y = asLong(dto.getY());
+        Long y = asLong(dto.getY());
         if (x == null || y == null) {
             throw new IllegalArgumentException("coordinates.x and coordinates.y must not be null");
         }

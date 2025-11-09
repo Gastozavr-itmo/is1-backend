@@ -21,13 +21,12 @@ public class ProductController {
     }
 
 
-
     @GetMapping
     public ResponseEntity<PageResponseDTO<ProductViewDTO>> list(
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size,
             @RequestParam(value = "sort", defaultValue = "id") String sort,
-            @RequestParam(value = "dir",  defaultValue = "asc") String dir,
+            @RequestParam(value = "dir", defaultValue = "asc") String dir,
 
             // ФИЛЬТРЫ
             @RequestParam(value = "name", required = false) String name,
@@ -39,9 +38,6 @@ public class ProductController {
         var pageResp = service.list(page, size, sort, dir, name, partNumber, unitOfMeasureLike, organizationName, personName);
         return ResponseEntity.ok(pageResp);
     }
-
-
-
 
 
     @PostMapping

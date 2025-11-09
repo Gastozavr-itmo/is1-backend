@@ -13,21 +13,45 @@ import java.util.*;
 @RequiredArgsConstructor
 public class OrganizationRepository {
     private final SessionFactory sf;
-    private Session s() { return sf.getCurrentSession(); }
+
+    private Session s() {
+        return sf.getCurrentSession();
+    }
 
     public Optional<Organization> findById(Integer id) {
         return Optional.ofNullable(s().get(Organization.class, id));
     }
 
-    public Integer save(Organization e) { s().persist(e); return e.getId(); }
-    public Integer merge(Organization e) { return ((Organization) s().merge(e)).getId(); }
-    public void delete(Organization e) { s().remove(e); }
+    public Integer save(Organization e) {
+        s().persist(e);
+        return e.getId();
+    }
+
+    public Integer merge(Organization e) {
+        return ((Organization) s().merge(e)).getId();
+    }
+
+    public void delete(Organization e) {
+        s().remove(e);
+    }
+
+    public Organization findByBusinessKey(String fullNameRaw) {
+        if (fullNameRaw == null || fullNameRaw.isBlank()) return null;
+        String norm = normalizeFullName(fullNameRaw);
+        return s().createQuery("""
+                        select o from Organization o
+                        where lower(trim(o.fullName)) = :fn
+                        """, Organization.class)
+                .setParameter("fn", norm)
+                .setMaxResults(1)
+                .uniqueResult();
+    }
 
     public Organization findByFullNameExact(String fullName) {
         return s().createQuery("""
-                select o from Organization o
-                where o.fullName = :fn
-                """, Organization.class)
+                        select o from Organization o
+                        where o.fullName = :fn
+                        """, Organization.class)
                 .setParameter("fn", fullName)
                 .setMaxResults(1)
                 .uniqueResult();
@@ -35,15 +59,20 @@ public class OrganizationRepository {
 
     public Organization findByFullNameNormalized(String normalizedLower) {
         return s().createQuery("""
-                select o from Organization o
-                where function('regexp_replace', lower(o.fullName), '\\s+', ' ', 'g') = :norm
-                """, Organization.class)
+                        select o from Organization o
+                        where function('regexp_replace', lower(o.fullName), '\\s+', ' ', 'g') = :norm
+                        """, Organization.class)
                 .setParameter("norm", normalizedLower)
                 .setMaxResults(1)
                 .uniqueResult();
     }
 
+    private static String normalizeFullName(String s) {
+        return s == null ? null : s.trim().toLowerCase(Locale.ROOT);
+    }
+
     private static final Map<String, SortSupport.Rule> SORT = new LinkedHashMap<>();
+
     static {
         SORT.put("id", SortSupport.Rule.column("o.id"));
         SORT.put("name", SortSupport.Rule.column("o.name"));
@@ -61,14 +90,14 @@ public class OrganizationRepository {
             int offset, int limit, String sort, String dir
     ) {
         StringBuilder hql = new StringBuilder("""
-            select o
-            from Organization o
-              left join o.officialAddress oa
-              left join oa.town oat
-              left join o.postalAddress pa
-              left join pa.town pat
-            where 1=1
-        """);
+                    select o
+                    from Organization o
+                      left join o.officialAddress oa
+                      left join oa.town oat
+                      left join o.postalAddress pa
+                      left join pa.town pat
+                    where 1=1
+                """);
         if (name != null && !name.isBlank()) hql.append(" and lower(o.name)      like lower(:name) ");
         if (fullName != null && !fullName.isBlank()) hql.append(" and lower(o.fullName)  like lower(:fullName) ");
         if (officialTownName != null && !officialTownName.isBlank())
@@ -87,8 +116,8 @@ public class OrganizationRepository {
         if (postalTownName != null && !postalTownName.isBlank())
             q.setParameter("postalTownName", "%" + postalTownName.trim() + "%");
 
-        q.setFirstResult(Math.max(offset,0));
-        q.setMaxResults(Math.max(limit,1));
+        q.setFirstResult(Math.max(offset, 0));
+        q.setMaxResults(Math.max(limit, 1));
         return q.list();
     }
 
@@ -96,14 +125,14 @@ public class OrganizationRepository {
             String name, String fullName, String officialTownName, String postalTownName
     ) {
         StringBuilder hql = new StringBuilder("""
-            select count(o.id)
-            from Organization o
-              left join o.officialAddress oa
-              left join oa.town oat
-              left join o.postalAddress pa
-              left join pa.town pat
-            where 1=1
-        """);
+                    select count(o.id)
+                    from Organization o
+                      left join o.officialAddress oa
+                      left join oa.town oat
+                      left join o.postalAddress pa
+                      left join pa.town pat
+                    where 1=1
+                """);
         if (name != null && !name.isBlank()) hql.append(" and lower(o.name)      like lower(:name) ");
         if (fullName != null && !fullName.isBlank()) hql.append(" and lower(o.fullName)  like lower(:fullName) ");
         if (officialTownName != null && !officialTownName.isBlank())

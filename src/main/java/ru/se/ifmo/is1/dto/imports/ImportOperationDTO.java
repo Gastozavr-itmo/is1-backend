@@ -14,7 +14,7 @@ public record ImportOperationDTO(
                 o.getId(),
                 o.getStatus().name(),
                 o.getCreatedCount(),
-                o.getStartedAt()  == null ? null : o.getStartedAt().toString(),
+                o.getStartedAt() == null ? null : o.getStartedAt().toString(),
                 o.getFinishedAt() == null ? null : o.getFinishedAt().toString()
         );
     }

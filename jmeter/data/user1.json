@@ -1,0 +1,96 @@
+[
+  {
+    "name": "U1 Water Bottle",
+    "coordinates": {
+      "x": 123.0,
+      "y": 10
+    },
+    "unitOfMeasure": "MILLILITERS",
+    "manufacturer": {
+      "name": "Orion",
+      "fullName": "Orion Ltd",
+      "annualTurnover": 5200000,
+      "employeesCount": 110,
+      "rating": 4,
+      "officialAddress": {
+        "zipCode": "190000",
+        "town": {
+          "name": "SPB-CENTER",
+          "x": 10,
+          "y": 20
+        }
+      },
+      "postalAddress": {
+        "zipCode": "190010",
+        "town": {
+          "name": "SPB-POST",
+          "x": 12,
+          "y": 22
+        }
+      }
+    },
+    "price": 1299,
+    "manufactureCost": 300,
+    "rating": 9,
+    "partNumber": "U1-A-1001",
+    "owner": {
+      "name": "Andrew",
+      "nationality": "RUSSIA",
+      "eyeColor": "BLACK",
+      "hairColor": "BROWN",
+      "height": 175,
+      "location": {
+        "name": "SPB-CENTER",
+        "x": 100,
+        "y": 200
+      }
+    }
+  },
+  {
+    "name": "U1 Protein Powder",
+    "coordinates": {
+      "x": 150.0,
+      "y": 35
+    },
+    "unitOfMeasure": "MILLIGRAMS",
+    "manufacturer": {
+      "name": "Orion",
+      "fullName": "Orion Ltd",
+      "annualTurnover": 5200000,
+      "employeesCount": 110,
+      "rating": 4,
+      "officialAddress": {
+        "zipCode": "190000",
+        "town": {
+          "name": "SPB-CENTER",
+          "x": 10,
+          "y": 20
+        }
+      },
+      "postalAddress": {
+        "zipCode": "190010",
+        "town": {
+          "name": "SPB-POST",
+          "x": 12,
+          "y": 22
+        }
+      }
+    },
+    "price": 2499,
+    "manufactureCost": 700,
+    "rating": 8,
+    "partNumber": "U1-B-1002",
+    "owner": {
+      "name": "LEE",
+      "nationality": "CHINA",
+      "eyeColor": "BROWN",
+      "hairColor": "BLACK",
+      "height": 168,
+      "location": {
+        "name": "MSK-NORTH",
+        "x": 30,
+        "y": 40
+      }
+    }
+  }
+]

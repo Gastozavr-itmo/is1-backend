@@ -40,7 +40,7 @@ public class HibernateConfig {
 
         Properties p = new Properties();
         p.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
-        p.put("hibernate.show_sql", "true");
+        p.put("hibernate.show_sql", "false");
         p.put("hibernate.format_sql", "true");
         p.put("hibernate.jdbc.time_zone", "UTC");
         p.put("hibernate.current_session_context_class", "org.springframework.orm.hibernate5.SpringSessionContext");

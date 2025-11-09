@@ -18,19 +18,19 @@ public class WebAppInitializer extends AbstractAnnotationConfigDispatcherServlet
     @Override
     protected Class<?>[] getRootConfigClasses() {
         // инфраструктура: БД/транзакции и т.д.
-        return new Class<?>[]{ HibernateConfig.class };
+        return new Class<?>[]{HibernateConfig.class};
     }
 
     @Override
     protected Class<?>[] getServletConfigClasses() {
         // веб-слой: контроллеры, конвертеры, multipart-резолвер и пр. лежат в WebConfig
-        return new Class<?>[]{ WebConfig.class };
+        return new Class<?>[]{WebConfig.class};
     }
 
     @Override
     protected String[] getServletMappings() {
         // все контроллеры доступны под /api/**
-        return new String[]{ "/api/*" };
+        return new String[]{"/api/*"};
     }
 
     @Override
@@ -39,8 +39,8 @@ public class WebAppInitializer extends AbstractAnnotationConfigDispatcherServlet
         var corsCfg = new CorsConfiguration();
         corsCfg.setAllowCredentials(true);
         corsCfg.setAllowedOrigins(List.of("http://localhost:53062", "http://127.0.0.1:53062"));
-        corsCfg.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
-        corsCfg.setAllowedHeaders(List.of("Origin","Accept","Content-Type","Authorization","X-Requested-With"));
+        corsCfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        corsCfg.setAllowedHeaders(List.of("Origin", "Accept", "Content-Type", "Authorization", "X-Requested-With"));
         corsCfg.setExposedHeaders(List.of("Location"));
         corsCfg.setMaxAge(3600L);
 
@@ -52,7 +52,7 @@ public class WebAppInitializer extends AbstractAnnotationConfigDispatcherServlet
         encoding.setEncoding(StandardCharsets.UTF_8.name());
         encoding.setForceEncoding(true);
 
-        return new Filter[] {
+        return new Filter[]{
                 new CorsFilter(corsSource),
                 encoding
         };

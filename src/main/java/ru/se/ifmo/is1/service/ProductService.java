@@ -3,6 +3,7 @@ package ru.se.ifmo.is1.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.se.ifmo.is1.concurrency.KeyLock;
 import ru.se.ifmo.is1.dto.paging.PageResponseDTO;
 import ru.se.ifmo.is1.dto.product.ProductCreateDTO;
 import ru.se.ifmo.is1.dto.product.ProductViewDTO;
@@ -11,7 +12,6 @@ import ru.se.ifmo.is1.model.Coordinates;
 import ru.se.ifmo.is1.model.Product;
 import ru.se.ifmo.is1.repository.ProductRepository;
 import ru.se.ifmo.is1.ws.ChangePublisher;
-
 
 @Service
 @RequiredArgsConstructor
@@ -33,7 +33,7 @@ public class ProductService {
     ) {
         int offset = Math.max(page, 0) * Math.max(size, 1);
 
-        var rows  = repo.findFiltered(name, partNumber, unitOfMeasureLike, organizationName, personName,
+        var rows = repo.findFiltered(name, partNumber, unitOfMeasureLike, organizationName, personName,
                 offset, size, sort, dir);
         long total = repo.countFiltered(name, partNumber, unitOfMeasureLike, organizationName, personName);
 
@@ -41,17 +41,30 @@ public class ProductService {
         return PageResponseDTO.of(items, page, size, total, sort, dir);
     }
 
-
+    @KeyLock(
+            "'product:uniq:' + T(ru.se.ifmo.is1.concurrency.LockKeys).productKey(" +
+                    "#p0.partNumber, " +
+                    "(#p0.manufacturer != null ? #p0.manufacturer.id : null)" +
+                    ")"
+    )
 
     @Transactional
     public Long create(ProductCreateDTO dto) {
         Product p = mapper.toEntity(dto);
         validate(p);
         Long id = repo.save(p);
-        changes.broadcast("product", "created", id); // ← уведомление
+        changes.broadcast("product", "created", id);
         return id;
     }
 
+    @KeyLock(
+            "{ " +
+                    "'product:id:' + #p0, " +
+                    "'product:uniq:' + T(ru.se.ifmo.is1.concurrency.LockKeys).productKey(" +
+                    "#p1.partNumber, (#p1.manufacturer != null ? #p1.manufacturer.id : null)" +
+                    ")" +
+                    " }"
+    )
     @Transactional
     public void update(Long id, ProductCreateDTO dto) {
         Product p = mapper.toEntity(dto);
@@ -61,6 +74,7 @@ public class ProductService {
         changes.broadcast("product", "updated", id);
     }
 
+    @KeyLock("'product:id:' + #p0")
     @Transactional
     public void delete(Long id) {
         var e = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Product not found"));
@@ -87,5 +101,11 @@ public class ProductService {
             throw new IllegalArgumentException("rating > 0 required");
         if (p.getPartNumber() == null || p.getPartNumber().trim().isEmpty())
             throw new IllegalArgumentException("partNumber required");
+    }
+
+    private String normalizePartNumber(String partNumber) {
+        if (partNumber == null) return null;
+        String t = partNumber.trim().toLowerCase();
+        return t.replaceAll("[\\s\\u2013\\u2014]+", "-");
     }
 }
