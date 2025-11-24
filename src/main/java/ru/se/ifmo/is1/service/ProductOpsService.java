@@ -1,6 +1,10 @@
 package ru.se.ifmo.is1.service;
 
-import jakarta.transaction.Transactional;
+import jakarta.persistence.OptimisticLockException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
+import org.springframework.transaction.TransactionSystemException;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.se.ifmo.is1.dto.ops.ManufactureCostGroupDTO;
@@ -14,6 +18,8 @@ import ru.se.ifmo.is1.ws.ChangePublisher;
 import java.util.List;
 import java.util.Objects;
 
+import static org.springframework.transaction.annotation.Isolation.SERIALIZABLE;
+
 @Service
 @RequiredArgsConstructor
 public class ProductOpsService {
@@ -23,8 +29,17 @@ public class ProductOpsService {
 
     private final ChangePublisher changesBroadcaster;
 
-    @Transactional
-    public Long deleteOneByRating(Number rating) {
+    @Retryable(
+            retryFor = {
+                    TransactionSystemException.class,
+                    OptimisticLockException.class
+            },
+            noRetryFor = IllegalArgumentException.class,
+            maxAttempts = 5,
+            backoff = @Backoff(delay = 20)
+    )
+    @Transactional(isolation = SERIALIZABLE)
+    public Long deleteOneByRating(Number rating){
         Long id = repo.deleteOneByRating(rating);
         if (id != null && changesBroadcaster != null) {
             changesBroadcaster.broadcast("product", "deleted", id);
@@ -32,8 +47,8 @@ public class ProductOpsService {
         return id;
     }
 
-    @Transactional
-    public PageResponseDTO<ManufactureCostGroupDTO> groupByManufactureCost(PageRequestDTO pr) {
+    @Transactional()
+    public PageResponseDTO<ManufactureCostGroupDTO> groupByManufactureCost(PageRequestDTO pr){
         int page = Math.max(0, pr.getPage());
         int size = Math.max(1, pr.getSize());
         boolean asc = !"desc".equalsIgnoreCase(pr.getDir());
@@ -47,8 +62,8 @@ public class ProductOpsService {
         return PageResponseDTO.of(items, page, size, total, pr.getSort(), pr.getDir());
     }
 
-    @Transactional
-    public PageResponseDTO<?> partNumberGt(String pn, PageRequestDTO pr) {
+    @Transactional(isolation = SERIALIZABLE)
+    public PageResponseDTO<?> partNumberGt(String pn, PageRequestDTO pr){
         int page = Math.max(0, pr.getPage());
         int size = Math.max(1, pr.getSize());
         boolean asc = !"desc".equalsIgnoreCase(pr.getDir());
@@ -60,8 +75,8 @@ public class ProductOpsService {
         return PageResponseDTO.of(items, page, size, total, pr.getSort(), pr.getDir());
     }
 
-    @Transactional
-    public PageResponseDTO<?> byManufacturer(Integer orgId, PageRequestDTO pr) {
+    @Transactional()
+    public PageResponseDTO<?> byManufacturer(Integer orgId, PageRequestDTO pr){
         int page = Math.max(0, pr.getPage());
         int size = Math.max(1, pr.getSize());
         boolean asc = !"desc".equalsIgnoreCase(pr.getDir());
@@ -73,8 +88,8 @@ public class ProductOpsService {
         return PageResponseDTO.of(items, page, size, total, pr.getSort(), pr.getDir());
     }
 
-    @Transactional
-    public PageResponseDTO<?> byPriceRange(Number min, Number max, PageRequestDTO pr) {
+    @Transactional()
+    public PageResponseDTO<?> byPriceRange(Number min, Number max, PageRequestDTO pr){
         int page = Math.max(0, pr.getPage());
         int size = Math.max(1, pr.getSize());
         boolean asc = !"desc".equalsIgnoreCase(pr.getDir());

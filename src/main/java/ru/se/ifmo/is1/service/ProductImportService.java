@@ -1,341 +1,246 @@
 package ru.se.ifmo.is1.service;
 
+import jakarta.persistence.OptimisticLockException;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import ru.se.ifmo.is1.concurrency.KeyedLockManager;
-import ru.se.ifmo.is1.concurrency.LockKeys;
 import ru.se.ifmo.is1.dto.imports.ImportResponse;
-import ru.se.ifmo.is1.dto.imports.OrganizationImportDTO;
-import ru.se.ifmo.is1.dto.imports.PersonImportDTO;
 import ru.se.ifmo.is1.dto.imports.ProductImportDTO;
-import ru.se.ifmo.is1.dto.imports.ValidationError;
-import ru.se.ifmo.is1.dto.shared.AddressDTO;
-import ru.se.ifmo.is1.dto.shared.LocationDTO;
 import ru.se.ifmo.is1.mapper.ImportMapper;
 import ru.se.ifmo.is1.model.*;
 import ru.se.ifmo.is1.repository.OrganizationRepository;
 import ru.se.ifmo.is1.repository.PersonRepository;
 import ru.se.ifmo.is1.repository.ProductRepository;
+import ru.se.ifmo.is1.util.NormalizationUtil;
 import ru.se.ifmo.is1.ws.ChangePublisher;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
+
+import static org.springframework.transaction.annotation.Isolation.SERIALIZABLE;
 
 @Service
 @RequiredArgsConstructor
 public class ProductImportService {
 
-    private final ImportHistoryService history;
-    private final ChangePublisher changes;
+    private final SessionFactory sessionFactory;
     private final ImportMapper mapper;
+    private final ImportHistoryService history;
 
-    private final OrganizationRepository organizationRepository;
-    private final PersonRepository personRepository;
-    private final ProductRepository productRepository;
+    private final OrganizationRepository orgRepo;
+    private final PersonRepository personRepo;
+    private final ProductRepository productRepo;
 
-    private final KeyedLockManager lockManager;
+    private final ChangePublisher changes;
 
-    private final SessionFactory sf;
-
-    private Session s() {
-        return sf.getCurrentSession();
+    private org.hibernate.Session s() {
+        return sessionFactory.getCurrentSession();
     }
 
-    @Transactional(rollbackFor = Exception.class)
+    private record PendingEvent(String entity, String action, Supplier<Long> id) {
+    }
+
+    @Retryable(
+            retryFor = {
+                    CannotAcquireLockException.class,
+                    TransactionSystemException.class,
+                    OptimisticLockException.class
+            },
+            noRetryFor = {
+                    IllegalArgumentException.class,
+                    org.hibernate.exception.ConstraintViolationException.class,
+                    org.springframework.dao.DataIntegrityViolationException.class
+            },
+            maxAttempts = 5,
+            backoff = @Backoff(delay = 20)
+    )
+    @Transactional(rollbackFor = Exception.class, isolation = SERIALIZABLE)
     public ImportResponse importAllTransactional(List<ProductImportDTO> items) {
         final LocalDateTime startedAt = LocalDateTime.now();
-        final List<PendingEvent> pendingEvents = new ArrayList<>();
-        final Set<String> seen = new HashSet<>(); // защита от дублей в самом файле
-
         int created = 0;
-        List<ValidationError> errors = new ArrayList<>();
 
-        rowLoop:
-        for (int i = 0; i < items.size(); i++) {
-            ProductImportDTO dto = items.get(i);
-            try {
-                OrganizationImportDTO orgDto = dto.getManufacturer();
-                if (orgDto == null) throw new IllegalArgumentException("manufacturer is required");
+        Map<String, Organization> orgCache = new HashMap<>();
+        List<PendingEvent> events = new ArrayList<>();
 
-                String orgNameRaw = orgDto.getName();
-                if (orgNameRaw == null || orgNameRaw.isBlank()) {
-                    throw new IllegalArgumentException("manufacturer.name required");
-                }
+        for (ProductImportDTO dto : items) {
 
-                String fullNameRaw = orgDto.getFullName();
-                if (fullNameRaw == null || fullNameRaw.isBlank()) {
-                    throw new IllegalArgumentException("manufacturer.fullName required");
-                }
-
-                String orgFullNameNorm = normalize(fullNameRaw);
-                String orgLockKey = orgBusinessKey(orgNameRaw);
-
-                Organization manufacturer;
-                ReentrantLock orgLock = lockManager.get(orgLockKey);
-                orgLock.lock();
-                try {
-                    manufacturer = organizationRepository.findByFullNameNormalized(orgFullNameNorm);
-                    if (manufacturer == null) {
-                        Address official = mapAddress(orgDto.getOfficialAddress());
-                        Address postal = mapAddress(orgDto.getPostalAddress());
-                        manufacturer = mapper.toOrganization(orgDto, official, postal);
-
-                        if (manufacturer.getName() == null || manufacturer.getName().isBlank()) {
-                            manufacturer.setName(orgNameRaw.trim());
-                        }
-                        manufacturer.setFullName(fullNameRaw.trim());
-
-                        try {
-                            Integer mid = organizationRepository.save(manufacturer);
-                            pendingEvents.add(PendingEvent.created("organization", mid));
-                        } catch (RuntimeException ex) {
-                            if (isUniqueConstraint(ex)) {
-                                s().clear();
-                                manufacturer = organizationRepository.findByFullNameNormalized(orgFullNameNorm);
-                                if (manufacturer == null) {
-                                    errors.add(new ValidationError(
-                                            i,
-                                            "items[" + i + "].manufacturer",
-                                            "Organization with fullName '" + fullNameRaw + "' already exists"
-                                    ));
-                                    continue rowLoop;
-                                }
-                            } else {
-                                throw ex;
-                            }
-                        }
-                    }
-                } finally {
-                    orgLock.unlock();
-                }
-
-                String partRaw = dto.getPartNumber();
-                if (partRaw == null || partRaw.isBlank())
-                    throw new IllegalArgumentException("partNumber required");
-
-                String normMfgName = normalize(orgNameRaw);
-                String normPart = normalize(partRaw);
-
-                String fileKey = normMfgName + "|" + normPart;
-                if (!seen.add(fileKey)) {
-                    continue;
-                }
-                Person owner = null;
-                PersonImportDTO ownerDto = dto.getOwner();
-                if (ownerDto != null) {
-                    Location loc = mapLocation(ownerDto.getLocation());
-                    Person candidate = mapper.toNullablePerson(ownerDto, loc);
-                    if (candidate != null) {
-                        String personLockKey = personBusinessKey(candidate);
-
-                        ReentrantLock personLock = lockManager.get(personLockKey);
-                        personLock.lock();
-                        try {
-                            Person existingOwner = personRepository.findByBusinessKey(
-                                    normalize(candidate.getName()),
-                                    candidate.getNationality(),
-                                    candidate.getLocation() != null ? candidate.getLocation().getX() : null,
-                                    candidate.getLocation() != null ? candidate.getLocation().getY() : null,
-                                    candidate.getLocation() != null ? normalize(candidate.getLocation().getName()) : null
-                            );
-                            if (existingOwner != null) {
-                                owner = existingOwner;
-                            } else {
-                                Long ownerId = personRepository.save(candidate);
-                                owner = candidate;
-                                pendingEvents.add(PendingEvent.created("person", ownerId));
-                            }
-                        } finally {
-                            personLock.unlock();
-                        }
-                    }
-                }
-
-                Product p = new Product();
-                p.setName(dto.getName());
-                p.setCoordinates(mapper.toCoordinates(dto.getCoordinates()));
-                p.setCreationDate(new Date());
-                p.setUnitOfMeasure(parseUnit(dto.getUnitOfMeasure()));
-                p.setManufacturer(manufacturer);
-
-                if (dto.getPrice() == null) throw new IllegalArgumentException("price required");
-                p.setPrice(dto.getPrice());
-                p.setManufactureCost(dto.getManufactureCost() == null ? 0 : dto.getManufactureCost());
-                p.setRating(dto.getRating() == null ? 0 : dto.getRating());
-                p.setPartNumber(partRaw.trim());
-                p.setOwner(owner);
-
-                validateProduct(p);
-
-                String productLockKey = productBusinessKey(partRaw, manufacturer);
-                ReentrantLock productLock = lockManager.get(productLockKey);
-                productLock.lock();
-                try {
-                    Product existing = productRepository.findByManufacturerAndNormalizedPartNumber(
-                            manufacturer, normPart
-                    );
-                    if (existing != null) {
-                        continue;
-                    }
-
-                    try {
-                        Long pid = productRepository.save(p);
-                        pendingEvents.add(PendingEvent.created("product", pid));
-                        created++;
-                    } catch (RuntimeException ex) {
-                        if (isUniqueConstraint(ex)) {
-                            s().clear();
-                            errors.add(new ValidationError(
-                                    i,
-                                    "items[" + i + "]",
-                                    "Product with same partNumber and manufacturer already exists"
-                            ));
-                            continue rowLoop;
-                        } else {
-                            throw ex;
-                        }
-                    }
-                } finally {
-                    productLock.unlock();
-                }
-
-            } catch (Exception ex) {
-                if (isUniqueConstraint(ex)) {
-                    s().clear();
-                }
-                errors.add(new ValidationError(
-                        i,
-                        "items[" + i + "]",
-                        ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage()
-                ));
+            if (dto.getManufacturer() == null) {
+                throw new IllegalArgumentException("manufacturer is required");
             }
+            var orgDto = dto.getManufacturer();
+            if (orgDto.getFullName() == null || orgDto.getFullName().isBlank()) {
+                throw new IllegalArgumentException("manufacturer.fullName must not be null/blank");
+            }
+
+            String orgKeyNorm = NormalizationUtil.canonicalKey(orgDto.getFullName(), true);
+
+            Organization org = orgCache.get(orgKeyNorm);
+            if (org == null) {
+                org = orgRepo.findByFullNameNormalized(orgKeyNorm);
+
+                if (org == null) {
+                    var official = mapper.toAddress(orgDto.getOfficialAddress());
+                    var postal = mapper.toAddress(orgDto.getPostalAddress());
+                    org = mapper.toOrganization(orgDto, official, postal);
+
+                    validateOrganization(org);
+
+                    s().persist(org);
+
+                    Organization orgRef = org;
+                    events.add(new PendingEvent(
+                            "organization",
+                            "created",
+                            () -> (long) orgRef.getId()
+                    ));
+                }
+
+                orgCache.put(orgKeyNorm, org);
+            }
+
+            Person owner = null;
+            if (dto.getOwner() != null) {
+                var ownerLoc = mapper.toNullableLocation(dto.getOwner().getLocation());
+                var ownerTmp = mapper.toNullablePerson(dto.getOwner(), ownerLoc);
+
+                validatePerson(ownerTmp);
+
+                String nameNorm = NormalizationUtil.canonicalKey(ownerTmp.getName(), true);
+                Person existingOwner = personRepo.findByBusinessKey(nameNorm);
+
+                if (existingOwner != null) {
+                    owner = existingOwner;
+                } else {
+                    s().persist(ownerTmp);
+                    owner = ownerTmp;
+
+                    Person ownerRef = owner;
+                    events.add(new PendingEvent(
+                            "person",
+                            "created",
+                            () -> (long) ownerRef.getId()
+                    ));
+                }
+            }
+
+            var coords = mapper.toCoordinates(dto.getCoordinates());
+            var product = mapper.toProduct(dto, org, owner, coords);
+
+            validateProduct(product);
+
+            String partNumberNorm = NormalizationUtil.canonicalPartNumber(product.getPartNumber());
+            Product existingProduct = productRepo.findByBusinessKey(org, partNumberNorm);
+
+            if (existingProduct != null) {
+                continue;
+            }
+
+            s().persist(product);
+            created++;
+
+            Product productRef = product;
+            events.add(new PendingEvent(
+                    "product",
+                    "created",
+                    () -> (long) productRef.getId()
+            ));
         }
+        s().flush();
 
-        if (!errors.isEmpty()) {
-            history.recordFailure(startedAt);
-            return ImportResponse.failed(0, errors);
-        }
-
-        registerAfterCommitPublisher(pendingEvents);
-        history.recordSuccess(startedAt, created);
-        return ImportResponse.ok(created);
-    }
-
-    private void registerAfterCommitPublisher(List<PendingEvent> events) {
-        if (events.isEmpty()) return;
+        final int createdFinal = created;
+        final List<PendingEvent> safeEvents = List.copyOf(events);
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                for (PendingEvent e : events) {
-                    changes.broadcast(e.entity, e.action, e.id);
+                for (PendingEvent e : safeEvents) {
+                    changes.broadcast(e.entity(), e.action(), e.id().get());
                 }
+                history.recordSuccess(startedAt, createdFinal);
+                changes.broadcast("imports", "updated", null);
             }
         });
+
+        return ImportResponse.ok(created);
+    }
+
+    @Recover
+    public ImportResponse recover(Exception ex, List<ProductImportDTO> items) {
+        history.recordFailure(LocalDateTime.now());
+        changes.broadcast("imports", "updated", null);
+
+        throw (ex instanceof RuntimeException re) ? re : new RuntimeException(ex);
     }
 
 
-    private String orgBusinessKey(String rawName) {
-        return "org:uniq:name:" + LockKeys.norm(rawName);
+    private void validateOrganization(Organization o) {
+        if (o.getName() == null || o.getName().trim().isEmpty())
+            throw new IllegalArgumentException("manufacturer.name required");
+        if (o.getAnnualTurnover() == null || o.getAnnualTurnover() <= 0)
+            throw new IllegalArgumentException("manufacturer.annualTurnover > 0 required");
+        if (o.getEmployeesCount() <= 0)
+            throw new IllegalArgumentException("manufacturer.employeesCount > 0 required");
+        if (o.getRating() <= 0)
+            throw new IllegalArgumentException("manufacturer.rating > 0 required");
+
+        requireAddress(o.getOfficialAddress(), "manufacturer.officialAddress");
+        requireAddress(o.getPostalAddress(), "manufacturer.postalAddress");
     }
 
-    private String personBusinessKey(Person p) {
-        return "person:uniq:" + LockKeys.personKey(
-                p.getName(),
-                p.getNationality(),
-                p.getLocation() != null ? p.getLocation().getName() : null
-        );
+    private void requireAddress(Address a, String n) {
+        if (a == null) throw new IllegalArgumentException(n + " required");
+        if (a.getZipCode() == null || a.getZipCode().trim().isEmpty())
+            throw new IllegalArgumentException(n + ".zipCode required");
+        Location t = a.getTown();
+        if (t == null || t.getX() == null || t.getY() == null ||
+                t.getName() == null || t.getName().trim().isEmpty())
+            throw new IllegalArgumentException(n + ".town x,y,name required");
     }
 
-    private String productBusinessKey(String partNumber, Organization m) {
-        Integer mid = (m != null ? m.getId() : null);
-        return "product:uniq:" + LockKeys.productKey(partNumber, mid);
-    }
-
-    private UnitOfMeasure parseUnit(String unit) {
-        if (unit == null) throw new IllegalArgumentException("unitOfMeasure required");
-        try {
-            return UnitOfMeasure.valueOf(unit.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Unknown unitOfMeasure: " + unit);
+    private void validatePerson(Person p) {
+        if (p.getName() == null || p.getName().trim().isEmpty())
+            throw new IllegalArgumentException("owner.name required");
+        if (p.getHeight() <= 0)
+            throw new IllegalArgumentException("owner.height > 0 required");
+        if (p.getNationality() == null)
+            throw new IllegalArgumentException("owner.nationality required");
+        Location l = p.getLocation();
+        if (l != null) {
+            if (l.getX() == null || l.getY() == null)
+                throw new IllegalArgumentException("owner.location x,y required if present");
+            if (l.getName() == null || l.getName().trim().isEmpty())
+                throw new IllegalArgumentException("owner.location.name required");
         }
-    }
-
-    private Address mapAddress(AddressDTO dto) {
-        if (dto == null) return null;
-        Address a = new Address();
-        a.setZipCode(dto.getZipCode());
-        a.setTown(mapLocation(dto.getTown()));
-        return a;
-    }
-
-    private Location mapLocation(LocationDTO dto) {
-        if (dto == null) return null;
-        Location l = new Location();
-        l.setX(dto.getX());
-        l.setY(dto.getY());
-        l.setName(dto.getName());
-        return l;
-    }
-
-    private static String normalize(String s) {
-        return s == null ? null : s.trim().toLowerCase(Locale.ROOT);
     }
 
     private void validateProduct(Product p) {
         if (p.getName() == null || p.getName().trim().isEmpty())
-            throw new IllegalArgumentException("name required");
-        if (p.getCoordinates() == null
-                || p.getCoordinates().getX() == null
-                || p.getCoordinates().getY() == null)
-            throw new IllegalArgumentException("coordinates x,y required");
-        if (p.getCoordinates().getX() > 450)
-            throw new IllegalArgumentException("coordinates.x must be <= 450");
-        if (p.getCoordinates().getY() <= -422)
-            throw new IllegalArgumentException("coordinates.y must be > -422");
+            throw new IllegalArgumentException("product.name required");
+
+        Coordinates c = p.getCoordinates();
+        if (c == null) throw new IllegalArgumentException("product.coordinates required");
+        if (c.getX() == null || c.getX() > 450)
+            throw new IllegalArgumentException("product.coordinates.x must be <= 450");
+        if (c.getY() == null || c.getY() <= -422)
+            throw new IllegalArgumentException("product.coordinates.y must be > -422");
+
         if (p.getUnitOfMeasure() == null)
-            throw new IllegalArgumentException("unitOfMeasure required");
+            throw new IllegalArgumentException("product.unitOfMeasure required");
         if (p.getManufacturer() == null)
-            throw new IllegalArgumentException("manufacturer required");
+            throw new IllegalArgumentException("product.manufacturer required");
         if (p.getPrice() <= 0)
-            throw new IllegalArgumentException("price > 0 required");
+            throw new IllegalArgumentException("product.price > 0 required");
         if (p.getRating() <= 0)
-            throw new IllegalArgumentException("rating > 0 required");
+            throw new IllegalArgumentException("product.rating > 0 required");
         if (p.getPartNumber() == null || p.getPartNumber().trim().isEmpty())
-            throw new IllegalArgumentException("partNumber required");
-    }
-
-    private boolean isUniqueConstraint(Throwable t) {
-        while (t != null) {
-            if (t instanceof ConstraintViolationException cve) {
-                String state = cve.getSQLState();
-                if ("23505".equals(state) || "23503".equals(state)) {
-                    return true;
-                }
-            }
-            t = t.getCause();
-        }
-        return false;
-    }
-
-    private record PendingEvent(String entity, String action, Number id) {
-        static PendingEvent created(String entity, Number id) {
-            return new PendingEvent(entity, "created", id);
-        }
-    }
-
-    private static class ImportFailedException extends RuntimeException {
-        final List<ValidationError> errors;
-
-        ImportFailedException(List<ValidationError> errors) {
-            super("Import failed");
-            this.errors = errors;
-        }
+            throw new IllegalArgumentException("product.partNumber required");
     }
 }

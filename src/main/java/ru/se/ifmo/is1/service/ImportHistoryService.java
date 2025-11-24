@@ -16,6 +16,8 @@ import ru.se.ifmo.is1.ws.ChangePublisher;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.springframework.transaction.annotation.Isolation.SERIALIZABLE;
+
 @Service
 @RequiredArgsConstructor
 public class ImportHistoryService {
@@ -48,7 +50,7 @@ public class ImportHistoryService {
         return op;
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRES_NEW,isolation = SERIALIZABLE)
     public void recordSuccess(LocalDateTime startedAt, int createdCount) {
         var op = ImportOperation.builder()
                 .status(ImportStatus.SUCCESS)
@@ -60,7 +62,7 @@ public class ImportHistoryService {
         afterCommit(() -> changes.broadcast("imports", "updated", op.getId()));
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRES_NEW,isolation = SERIALIZABLE)
     public void recordFailure(LocalDateTime startedAt) {
         var op = ImportOperation.builder()
                 .status(ImportStatus.FAILED)

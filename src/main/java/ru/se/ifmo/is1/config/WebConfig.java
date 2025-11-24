@@ -24,7 +24,6 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Bean
     public ObjectMapper objectMapper() {
-        // findAndRegisterModules() подключит всё, что есть на classpath (если ничего нет — тоже ок)
         return new ObjectMapper()
                 .findAndRegisterModules()
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);

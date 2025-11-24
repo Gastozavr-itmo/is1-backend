@@ -13,17 +13,17 @@ public class PersonImportDTO {
     private String name;
 
     @NotNull
-    private String nationality; // enum в домене
+    private String nationality;
 
     @NotNull
-    private String eyeColor; // enum
+    private String eyeColor;
 
     @NotNull
-    private String hairColor; // enum
+    private String hairColor;
 
     @Positive
     private Double height;
 
     @Valid
-    private LocationDTO location; // может быть null по твоей модели
+    private LocationDTO location;
 }

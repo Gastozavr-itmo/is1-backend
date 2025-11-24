@@ -6,9 +6,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class ValidationError {
-    private int index;         // индекс записи в массиве
-    private String fieldPath;  // путь к полю (items[3].manufacturer.fullName)
-    private String message;    // текст ошибки
+    private int index;
+    private String fieldPath;
+    private String message;
 
     public ValidationError(int index, String fieldPath, String message) {
         this.index = index;

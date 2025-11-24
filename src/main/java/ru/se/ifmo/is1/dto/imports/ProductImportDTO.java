@@ -15,7 +15,7 @@ public class ProductImportDTO {
     private CoordinatesDTO coordinates;
 
     @NotNull
-    private String unitOfMeasure; // конвертируем к enum в маппере
+    private String unitOfMeasure;
 
     @Valid
     @NotNull
@@ -34,5 +34,5 @@ public class ProductImportDTO {
     private String partNumber;
 
     @Valid
-    private PersonImportDTO owner; // может быть null
+    private PersonImportDTO owner;
 }

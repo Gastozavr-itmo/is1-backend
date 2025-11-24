@@ -1,9 +1,15 @@
 package ru.se.ifmo.is1.service;
 
+import jakarta.persistence.OptimisticLockException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.CannotSerializeTransactionException;
+import org.springframework.dao.DeadlockLoserDataAccessException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.annotation.Transactional;
-import ru.se.ifmo.is1.concurrency.KeyLock;
 import ru.se.ifmo.is1.dto.organization.OrganizationCreateDTO;
 import ru.se.ifmo.is1.dto.organization.OrganizationViewDTO;
 
@@ -14,6 +20,8 @@ import ru.se.ifmo.is1.model.Location;
 import ru.se.ifmo.is1.model.Organization;
 import ru.se.ifmo.is1.repository.OrganizationRepository;
 import ru.se.ifmo.is1.ws.ChangePublisher;
+
+import static org.springframework.transaction.annotation.Isolation.SERIALIZABLE;
 
 
 @Service
@@ -41,7 +49,7 @@ public class OrganizationService {
     ) {
         int offset = Math.max(page, 0) * Math.max(size, 1);
 
-        var rows = repo.findFiltered(name, fullName, officialTownName, postalTownName, offset, size, sort, dir);
+        var rows  = repo.findFiltered(name, fullName, officialTownName, postalTownName, offset, size, sort, dir);
         long total = repo.countFiltered(name, fullName, officialTownName, postalTownName);
 
         var items = rows.stream().map(mapper::toView).toList();
@@ -49,51 +57,74 @@ public class OrganizationService {
     }
 
 
-    @KeyLock("'org:uniq:fullName:' + T(ru.se.ifmo.is1.concurrency.LockKeys).norm(#p0.fullName)")
-    @Transactional
+
+    @Retryable(
+            retryFor = {
+                    CannotSerializeTransactionException.class,
+                    CannotAcquireLockException.class,
+                    DeadlockLoserDataAccessException.class,
+                    TransactionSystemException.class,
+                    OptimisticLockException.class
+            },
+            noRetryFor = {
+                    IllegalArgumentException.class,
+                    org.hibernate.exception.ConstraintViolationException.class,
+                    org.springframework.dao.DataIntegrityViolationException.class
+            },
+            maxAttempts = 5,
+            backoff = @Backoff(delay = 20)
+    )
+    @Transactional(isolation = SERIALIZABLE)
     public Integer create(OrganizationCreateDTO dto) {
         Organization o = mapper.toEntity(dto);
         validate(o);
-
-        if (o.getFullName() == null || o.getFullName().trim().isEmpty()) {
-            throw new IllegalArgumentException("fullName required");
-        }
-        Organization existing = repo.findByBusinessKey(o.getFullName());
-        if (existing != null) {
-            throw new IllegalArgumentException("Organization with same fullName already exists");
-        }
-
         Integer id = repo.save(o);
         changes.broadcast("organization", "created", id);
         return id;
     }
 
-    @KeyLock(
-            "{ " +
-                    "'org:id:' + #p0, " +
-                    "'org:uniq:fullName:' + T(ru.se.ifmo.is1.concurrency.LockKeys).norm(#p1.fullName)" +
-                    " }"
+    @Retryable(
+            retryFor = {
+                    CannotSerializeTransactionException.class,
+                    CannotAcquireLockException.class,
+                    DeadlockLoserDataAccessException.class,
+                    TransactionSystemException.class,
+                    OptimisticLockException.class
+            },
+            noRetryFor = {
+                    IllegalArgumentException.class,
+                    org.hibernate.exception.ConstraintViolationException.class,
+                    org.springframework.dao.DataIntegrityViolationException.class
+            },
+            maxAttempts = 5,
+            backoff = @Backoff(delay = 20)
     )
-    @Transactional
+    @Transactional(isolation = SERIALIZABLE)
     public void update(Integer id, OrganizationCreateDTO dto) {
         Organization o = mapper.toEntity(dto);
         o.setId(id);
         validate(o);
-
-        if (o.getFullName() == null || o.getFullName().trim().isEmpty()) {
-            throw new IllegalArgumentException("fullName required");
-        }
-        Organization existing = repo.findByBusinessKey(o.getFullName());
-        if (existing != null && existing.getId() != id) {
-            throw new IllegalArgumentException("Another organization with same fullName already exists");
-        }
-
         repo.merge(o);
         changes.broadcast("organization", "updated", id);
     }
 
-    @KeyLock("'org:id:' + #p0")
-    @Transactional
+    @Retryable(
+            retryFor = {
+                    CannotSerializeTransactionException.class,
+                    CannotAcquireLockException.class,
+                    DeadlockLoserDataAccessException.class,
+                    TransactionSystemException.class,
+                    OptimisticLockException.class
+            },
+            noRetryFor = {
+                    IllegalArgumentException.class,
+                    org.hibernate.exception.ConstraintViolationException.class,
+                    org.springframework.dao.DataIntegrityViolationException.class
+            },
+            maxAttempts = 5,
+            backoff = @Backoff(delay = 20)
+    )
+    @Transactional(isolation = SERIALIZABLE)
     public void delete(Integer id) {
         var e = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Organization not found"));
         repo.delete(e);

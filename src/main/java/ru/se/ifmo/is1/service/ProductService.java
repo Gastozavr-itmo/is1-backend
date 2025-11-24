@@ -1,17 +1,28 @@
 package ru.se.ifmo.is1.service;
 
+import jakarta.persistence.OptimisticLockException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.CannotSerializeTransactionException;
+import org.springframework.dao.DeadlockLoserDataAccessException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.TransactionSystemException;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
-import ru.se.ifmo.is1.concurrency.KeyLock;
 import ru.se.ifmo.is1.dto.paging.PageResponseDTO;
 import ru.se.ifmo.is1.dto.product.ProductCreateDTO;
 import ru.se.ifmo.is1.dto.product.ProductViewDTO;
 import ru.se.ifmo.is1.mapper.ProductMapper;
 import ru.se.ifmo.is1.model.Coordinates;
+import ru.se.ifmo.is1.model.Organization;
 import ru.se.ifmo.is1.model.Product;
 import ru.se.ifmo.is1.repository.ProductRepository;
 import ru.se.ifmo.is1.ws.ChangePublisher;
+
+import static org.springframework.transaction.annotation.Isolation.SERIALIZABLE;
+
 
 @Service
 @RequiredArgsConstructor
@@ -33,7 +44,7 @@ public class ProductService {
     ) {
         int offset = Math.max(page, 0) * Math.max(size, 1);
 
-        var rows = repo.findFiltered(name, partNumber, unitOfMeasureLike, organizationName, personName,
+        var rows  = repo.findFiltered(name, partNumber, unitOfMeasureLike, organizationName, personName,
                 offset, size, sort, dir);
         long total = repo.countFiltered(name, partNumber, unitOfMeasureLike, organizationName, personName);
 
@@ -41,31 +52,68 @@ public class ProductService {
         return PageResponseDTO.of(items, page, size, total, sort, dir);
     }
 
-    @KeyLock(
-            "'product:uniq:' + T(ru.se.ifmo.is1.concurrency.LockKeys).productKey(" +
-                    "#p0.partNumber, " +
-                    "(#p0.manufacturer != null ? #p0.manufacturer.id : null)" +
-                    ")"
-    )
 
-    @Transactional
+    @Retryable(
+            retryFor = {
+                    CannotSerializeTransactionException.class,
+                    CannotAcquireLockException.class,
+                    DeadlockLoserDataAccessException.class,
+                    TransactionSystemException.class,
+                    OptimisticLockException.class
+            },
+            noRetryFor = {
+                    IllegalArgumentException.class,
+                    org.hibernate.exception.ConstraintViolationException.class,
+                    org.springframework.dao.DataIntegrityViolationException.class
+            },
+            maxAttempts = 5,
+            backoff = @Backoff(delay = 20)
+    )
+    @Transactional(isolation = SERIALIZABLE)
     public Long create(ProductCreateDTO dto) {
         Product p = mapper.toEntity(dto);
+
         validate(p);
+
+        Organization m = p.getManufacturer();
+
+        String partNumberNorm = null;
+        if (p.getPartNumber() != null) {
+            partNumberNorm = p.getPartNumber()
+                    .trim()
+                    .toLowerCase()
+                    .replaceAll("[\\s\\u2013\\u2014]+", "-"); // ровно как в HQL
+        }
+
+        Product existing = repo.findByBusinessKey(m, partNumberNorm);
+        if (existing != null) {
+            throw new IllegalArgumentException(
+                    "Product with same manufacturer and partNumber already exists (id=" + existing.getId() + ")"
+            );
+        }
+
         Long id = repo.save(p);
         changes.broadcast("product", "created", id);
         return id;
     }
 
-    @KeyLock(
-            "{ " +
-                    "'product:id:' + #p0, " +
-                    "'product:uniq:' + T(ru.se.ifmo.is1.concurrency.LockKeys).productKey(" +
-                    "#p1.partNumber, (#p1.manufacturer != null ? #p1.manufacturer.id : null)" +
-                    ")" +
-                    " }"
+    @Retryable(
+            retryFor = {
+                    CannotSerializeTransactionException.class,
+                    CannotAcquireLockException.class,
+                    DeadlockLoserDataAccessException.class,
+                    TransactionSystemException.class,
+                    OptimisticLockException.class
+            },
+            noRetryFor = {
+                    IllegalArgumentException.class,
+                    org.hibernate.exception.ConstraintViolationException.class,
+                    org.springframework.dao.DataIntegrityViolationException.class
+            },
+            maxAttempts = 5,
+            backoff = @Backoff(delay = 20)
     )
-    @Transactional
+    @Transactional(isolation = SERIALIZABLE)
     public void update(Long id, ProductCreateDTO dto) {
         Product p = mapper.toEntity(dto);
         p.setId(id);
@@ -74,8 +122,23 @@ public class ProductService {
         changes.broadcast("product", "updated", id);
     }
 
-    @KeyLock("'product:id:' + #p0")
-    @Transactional
+    @Retryable(
+            retryFor = {
+                    CannotSerializeTransactionException.class,
+                    CannotAcquireLockException.class,
+                    DeadlockLoserDataAccessException.class,
+                    TransactionSystemException.class,
+                    OptimisticLockException.class
+            },
+            noRetryFor = {
+                    IllegalArgumentException.class,
+                    org.hibernate.exception.ConstraintViolationException.class,
+                    org.springframework.dao.DataIntegrityViolationException.class
+            },
+            maxAttempts = 5,
+            backoff = @Backoff(delay = 20)
+    )
+    @Transactional(isolation = SERIALIZABLE)
     public void delete(Long id) {
         var e = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Product not found"));
         repo.delete(e);
@@ -101,11 +164,5 @@ public class ProductService {
             throw new IllegalArgumentException("rating > 0 required");
         if (p.getPartNumber() == null || p.getPartNumber().trim().isEmpty())
             throw new IllegalArgumentException("partNumber required");
-    }
-
-    private String normalizePartNumber(String partNumber) {
-        if (partNumber == null) return null;
-        String t = partNumber.trim().toLowerCase();
-        return t.replaceAll("[\\s\\u2013\\u2014]+", "-");
     }
 }
