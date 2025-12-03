@@ -49,23 +49,6 @@ public class PersonService {
         return PageResponseDTO.of(items, page, size, total, sort, dir);
     }
 
-
-    @Retryable(
-            retryFor = {
-                    CannotSerializeTransactionException.class,
-                    CannotAcquireLockException.class,
-                    DeadlockLoserDataAccessException.class,
-                    TransactionSystemException.class,   // fallback-обёртка
-                    OptimisticLockException.class       // если реально используешь @Version
-            },
-            noRetryFor = {
-                    IllegalArgumentException.class,
-                    org.hibernate.exception.ConstraintViolationException.class,
-                    org.springframework.dao.DataIntegrityViolationException.class
-            },
-            maxAttempts = 5,
-            backoff = @Backoff(delay = 20)
-    )
     @Transactional(isolation = SERIALIZABLE)
     public Long create(PersonCreateDTO dto) {
         Person p = mapper.toEntity(dto);
@@ -85,22 +68,6 @@ public class PersonService {
         return id;
     }
 
-    @Retryable(
-            retryFor = {
-                    CannotSerializeTransactionException.class,
-                    CannotAcquireLockException.class,
-                    DeadlockLoserDataAccessException.class,
-                    TransactionSystemException.class,
-                    OptimisticLockException.class
-            },
-            noRetryFor = {
-                    IllegalArgumentException.class,
-                    org.hibernate.exception.ConstraintViolationException.class,
-                    org.springframework.dao.DataIntegrityViolationException.class
-            },
-            maxAttempts = 5,
-            backoff = @Backoff(delay = 20)
-    )
     @Transactional(isolation = SERIALIZABLE)
     public void update(Long id, PersonCreateDTO dto) {
         Person p = mapper.toEntity(dto);
@@ -110,28 +77,15 @@ public class PersonService {
         changes.broadcast("person","updated", id);
     }
 
-    @Retryable(
-            retryFor = {
-                    CannotSerializeTransactionException.class,
-                    CannotAcquireLockException.class,
-                    DeadlockLoserDataAccessException.class,
-                    TransactionSystemException.class,
-                    OptimisticLockException.class
-            },
-            noRetryFor = {
-                    IllegalArgumentException.class,
-                    org.hibernate.exception.ConstraintViolationException.class,
-                    org.springframework.dao.DataIntegrityViolationException.class
-            },
-            maxAttempts = 5,
-            backoff = @Backoff(delay = 20)
-    )
+
     @Transactional(isolation = SERIALIZABLE)
     public void delete(Long id) {
         var e = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Person not found"));
         repo.delete(e);
         changes.broadcast("person","deleted", id);
     }
+
+
 
     private void validate(Person p) {
         if (p.getName() == null || p.getName().trim().isEmpty())

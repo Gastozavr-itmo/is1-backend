@@ -1,131 +1,199 @@
 package ru.se.ifmo.is1.exception;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ProblemDetail;
-import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.UnexpectedRollbackException;
-import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import ru.se.ifmo.is1.dto.error.ExceptionResponse;
+import ru.se.ifmo.is1.dto.imports.ValidationError;
 
-import java.net.URI;
-import java.time.OffsetDateTime;
+import java.sql.SQLException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ProblemDetail handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpServletRequest req) {
-        var pd = baseProblem(HttpStatus.BAD_REQUEST, ApiErrorCode.VALIDATION_ERROR, "Validation failed", req);
-        var errors = new ArrayList<FieldError>();
-        ex.getBindingResult().getFieldErrors().forEach(fe -> errors.add(new FieldError(fe.getField(), fe.getDefaultMessage())));
-        ex.getBindingResult().getGlobalErrors().forEach(ge -> errors.add(new FieldError(ge.getObjectName(), ge.getDefaultMessage())));
-        addErrors(pd, errors);
-        return pd;
+    // ===== 400 — бизнес-валидация (твоя логика) =====
+    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
+    public ResponseEntity<ExceptionResponse> handleBadRequest(RuntimeException ex,
+                                                              HttpServletRequest request) {
+        String msg = ex.getMessage();
+        var details = List.of(new ValidationError(-1, "items", msg));
+        return build(HttpStatus.BAD_REQUEST, msg, request, details);
     }
+
+    // ===== 400 — @Valid на DTO (RequestBody / ModelAttribute) =====
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ExceptionResponse> handleMethodArgNotValid(MethodArgumentNotValidException ex,
+                                                                     HttpServletRequest request) {
+        List<ValidationError> details = new ArrayList<>();
+        ex.getBindingResult().getFieldErrors().forEach(fe ->
+                details.add(new ValidationError(-1, fe.getField(), fe.getDefaultMessage()))
+        );
+        return build(HttpStatus.BAD_REQUEST, "Validation failed", request, details);
+    }
+
+    @ExceptionHandler(BindException.class)
+    public ResponseEntity<ExceptionResponse> handleBindException(BindException ex,
+                                                                 HttpServletRequest request) {
+        List<ValidationError> details = new ArrayList<>();
+        ex.getBindingResult().getFieldErrors().forEach(fe ->
+                details.add(new ValidationError(-1, fe.getField(), fe.getDefaultMessage()))
+        );
+        return build(HttpStatus.BAD_REQUEST, "Validation failed", request, details);
+    }
+
+    // ===== 400 — Bean Validation на сущностях (внутри транзакции) =====
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ProblemDetail handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest req) {
-        var pd = baseProblem(HttpStatus.BAD_REQUEST, ApiErrorCode.VALIDATION_ERROR, "Validation failed", req);
-        var errors = new ArrayList<FieldError>();
-        for (ConstraintViolation<?> v : ex.getConstraintViolations()) {
-            errors.add(new FieldError(String.valueOf(v.getPropertyPath()), v.getMessage()));
+    public ResponseEntity<ExceptionResponse> handleConstraintViolation(ConstraintViolationException ex,
+                                                                       HttpServletRequest request) {
+        return buildFromConstraintViolation(ex, request);
+    }
+
+    // ===== 404 — сущность не найдена =====
+
+    @ExceptionHandler({EntityNotFoundException.class, java.util.NoSuchElementException.class})
+    public ResponseEntity<ExceptionResponse> handleNotFound(RuntimeException ex,
+                                                            HttpServletRequest request) {
+        return build(HttpStatus.NOT_FOUND, "Object not found", request, List.of());
+    }
+
+    // ===== 409 — транзакция откатилась из-за целостности БД =====
+    //
+    // Ловим:
+    //  - TransactionSystemException / UnexpectedRollbackException (как в WildFly)
+    //  - прямой DataIntegrityViolationException, если Spring его кинул сразу
+    //
+    @ExceptionHandler({
+            TransactionSystemException.class,
+            UnexpectedRollbackException.class,
+            DataIntegrityViolationException.class
+    })
+    public ResponseEntity<ExceptionResponse> handleTxRollback(RuntimeException ex,
+                                                              HttpServletRequest request) {
+
+        Throwable root = rootCause(ex);
+
+        // Если это Bean Validation — отдаём как 400 "Validation failed"
+        if (root instanceof ConstraintViolationException cve) {
+            return buildFromConstraintViolation(cve, request);
         }
-        addErrors(pd, errors);
-        return pd;
-    }
 
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ProblemDetail handleNotReadable(HttpMessageNotReadableException ex, HttpServletRequest req) {
-        return baseProblem(HttpStatus.BAD_REQUEST, ApiErrorCode.BAD_REQUEST, "Malformed JSON or invalid request body", req);
-    }
+        // Пробуем достать SQL-исключение
+        SQLException sqlEx = extractSQLException(root);
 
-    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ProblemDetail handleMethodNotSupported(HttpRequestMethodNotSupportedException ex, HttpServletRequest req) {
-        return baseProblem(HttpStatus.METHOD_NOT_ALLOWED, ApiErrorCode.BAD_REQUEST, "HTTP method not allowed for this endpoint", req);
-    }
+        String message = "Транзакция отменена. Изменения не были сохранены.";
+        HttpStatus status = HttpStatus.CONFLICT;
 
-    @ExceptionHandler(NotFoundException.class)
-    public ProblemDetail handleNotFound(NotFoundException ex, HttpServletRequest req) {
-        return baseProblem(HttpStatus.NOT_FOUND, ApiErrorCode.ENTITY_NOT_FOUND, safeMsg(ex, "Entity not found"), req);
-    }
+        if (sqlEx != null) {
+            String sqlState = sqlEx.getSQLState();
+            String sqlMsg   = sqlEx.getMessage();
 
-    @ExceptionHandler(ValidationException.class)
-    public ProblemDetail handleValidation(ValidationException ex, HttpServletRequest req) {
-        return baseProblem(HttpStatus.BAD_REQUEST, ApiErrorCode.VALIDATION_ERROR, safeMsg(ex, "Validation failed"), req);
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ProblemDetail handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest req) {
-        return baseProblem(HttpStatus.BAD_REQUEST, ApiErrorCode.VALIDATION_ERROR, safeMsg(ex, "Validation failed"), req);
-    }
-
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ProblemDetail handleDataIntegrity(DataIntegrityViolationException ex, HttpServletRequest req) {
-        var code = ApiErrorCode.DATA_INTEGRITY_VIOLATION;
-        var message = "Database constraint violated";
-        var root = rootCause(ex);
-        var low = (root.getMessage() == null ? "" : root.getMessage()).toLowerCase();
-
-        if (low.contains("unique") || low.contains("duplicate key") || low.contains("uq_")) {
-            code = ApiErrorCode.UNIQUE_CONSTRAINT_VIOLATION;
-            message = "Unique constraint violated";
+            // 23503 — FK violation: попытка удалить/обновить объект, на который есть ссылки
+            if ("23503".equals(sqlState)) {
+                if (sqlMsg != null && sqlMsg.contains("product_owner_id_fkey")) {
+                    message = "Невозможно удалить владельца: на него ссылаются продукты. Транзакция отменена.";
+                } else if (sqlMsg != null && sqlMsg.contains("product_manufacturer_id_fkey")) {
+                    message = "Невозможно удалить производителя: на него ссылаются продукты. Транзакция отменена.";
+                } else {
+                    message = "Невозможно удалить или изменить объект: он используется в других записях. Транзакция отменена.";
+                }
+            }
+            // 23505 — UNIQUE violation
+            else if ("23505".equals(sqlState)) {
+                message = "Объект с таким уникальным значением уже существует. Транзакция отменена.";
+            }
+            // 23502 — NOT NULL violation
+            else if ("23502".equals(sqlState)) {
+                message = "Не заполнено обязательное поле. Транзакция отменена.";
+            }
         }
-        return baseProblem(HttpStatus.CONFLICT, code, message, req);
+
+        var details = List.of(new ValidationError(-1, "items", message));
+        return build(status, message, request, details);
     }
 
-    @ExceptionHandler(UnexpectedRollbackException.class)
-    public ProblemDetail handleUnexpectedRollback(UnexpectedRollbackException ex, HttpServletRequest req) {
-        return baseProblem(HttpStatus.CONFLICT, ApiErrorCode.DATA_INTEGRITY_VIOLATION, "Transaction rolled back due to data conflict", req);
+    // ===== 500 — прочие ошибки БД (соединение и т.п.) =====
+
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<ExceptionResponse> handleDataAccess(DataAccessException ex,
+                                                              HttpServletRequest request) {
+        String message = "Ошибка при обращении к базе данных. Транзакция могла быть отменена.";
+        var details = List.of(new ValidationError(-1, "items", message));
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, message, request, details);
     }
+
+    // ===== 500 — общий fallback =====
 
     @ExceptionHandler(Exception.class)
-    public ProblemDetail handleAny(Exception ex, HttpServletRequest req) {
-        return baseProblem(HttpStatus.INTERNAL_SERVER_ERROR, ApiErrorCode.INTERNAL_ERROR, "Internal server error", req);
+    public ResponseEntity<ExceptionResponse> handleInternal(Exception ex,
+                                                            HttpServletRequest request) {
+        ex.printStackTrace(); // позже заменишь на логгер
+
+        String message = "Internal server error. Transaction may have been rolled back.";
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, message, request, List.of());
     }
 
+    // ===== helpers =====
 
-    private ProblemDetail baseProblem(HttpStatus status, ApiErrorCode code, String detail, HttpServletRequest req) {
-        ProblemDetail pd = ProblemDetail.forStatusAndDetail(status, detail);
-        pd.setType(URI.create("about:blank"));
-        pd.setTitle(status.getReasonPhrase());
-        pd.setProperty("code", code.name());
-        pd.setProperty("path", req.getRequestURI());
-        pd.setProperty("timestamp", OffsetDateTime.now().toString());
-        return pd;
-    }
-
-    private void addErrors(ProblemDetail pd, List<FieldError> errors) {
-        if (errors != null && !errors.isEmpty()) {
-            pd.setProperty("errors", errors);
+    private ResponseEntity<ExceptionResponse> buildFromConstraintViolation(ConstraintViolationException ex,
+                                                                           HttpServletRequest request) {
+        List<ValidationError> details = new ArrayList<>();
+        for (ConstraintViolation<?> cv : ex.getConstraintViolations()) {
+            String path = cv.getPropertyPath() != null
+                    ? cv.getPropertyPath().toString()
+                    : "items";
+            details.add(new ValidationError(-1, path, cv.getMessage()));
         }
+        return build(HttpStatus.BAD_REQUEST, "Validation failed", request, details);
     }
 
-    private String safeMsg(Throwable ex, String fallback) {
-        String m = ex.getMessage();
-        return (m == null || m.isBlank()) ? fallback : m;
+    private ResponseEntity<ExceptionResponse> build(HttpStatus status,
+                                                    String message,
+                                                    HttpServletRequest request,
+                                                    List<ValidationError> details) {
+        ExceptionResponse body = ExceptionResponse.builder()
+                .status(status.value())
+                .error(status.getReasonPhrase())
+                .message(message)
+                .path(request.getRequestURI())
+                .timestamp(Instant.now())
+                .details(details == null ? List.of() : details)
+                .build();
+
+        return ResponseEntity.status(status).body(body);
     }
 
     private Throwable rootCause(Throwable t) {
         Throwable c = t;
-        while (c.getCause() != null && c.getCause() != c) c = c.getCause();
+        while (c.getCause() != null && c.getCause() != c) {
+            c = c.getCause();
+        }
         return c;
     }
 
-    public static final class FieldError {
-        public final String field;
-        public final String message;
-
-        public FieldError(String field, String message) {
-            this.field = field;
-            this.message = message;
+    private SQLException extractSQLException(Throwable t) {
+        Throwable cur = t;
+        while (cur != null && cur != cur.getCause()) {
+            if (cur instanceof SQLException sql) {
+                return sql;
+            }
+            cur = cur.getCause();
         }
+        return null;
     }
 }

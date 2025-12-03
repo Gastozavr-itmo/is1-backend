@@ -1,95 +1,95 @@
 [
   {
-    "name": "Demo3 A",
+    "name": "U1 Water Bottle",
     "coordinates": {
-      "x": 123.4,
+      "x": 123.0,
       "y": 10
     },
     "unitOfMeasure": "MILLILITERS",
     "manufacturer": {
-      "name": "ACMEwow1",
-      "fullName": "wow1",
-      "annualTurnover": 12500000.0,
-      "employeesCount": 250,
-      "rating": 5,
+      "name": "Orion",
+      "fullName": "Orion Ltd",
+      "annualTurnover": 5200000,
+      "employeesCount": 110,
+      "rating": 4,
       "officialAddress": {
         "zipCode": "190000",
         "town": {
           "name": "SPB-CENTER",
-          "x": 10,
-          "y": 20
+          "x": 111,
+          "y": 111
         }
       },
       "postalAddress": {
-        "zipCode": "190000",
+        "zipCode": "190010",
         "town": {
-          "name": "SPB-CENTER",
-          "x": 10,
-          "y": 20
+          "name": "SPB-POST",
+          "x": 111,
+          "y": 111
         }
       }
     },
-    "price": 1999,
-    "manufactureCost": 350,
-    "rating": 10,
-    "partNumber": "ACM-A-03403",
+    "price": 1299,
+    "manufactureCost": 300,
+    "rating": 9,
+    "partNumber": "U1-A-1001",
     "owner": {
       "name": "Andrew",
       "nationality": "RUSSIA",
       "eyeColor": "BLACK",
-      "hairColor": "BLACK",
-      "height": 175.5,
+      "hairColor": "BROWN",
+      "height": 175,
       "location": {
         "name": "SPB-CENTER",
-        "x": 100,
-        "y": 200
+        "x": 111,
+        "y": 111
       }
     }
   },
   {
-    "name": "Demo B",
+    "name": "U1 Protein Powder",
     "coordinates": {
-      "x": 111.0,
-      "y": 11
+      "x": 150.0,
+      "y": 35
     },
-    "unitOfMeasure": "MILLILITERS",
+    "unitOfMeasure": "MILLIGRAMS",
     "manufacturer": {
-      "name": "ACME",
-      "fullName": "ACME Limited",
-      "annualTurnover": 12500000.0,
-      "employeesCount": 250,
-      "rating": 5,
+      "name": "Orion",
+      "fullName": "Orion Ltd",
+      "annualTurnover": 5200000,
+      "employeesCount": 110,
+      "rating": 4,
       "officialAddress": {
         "zipCode": "190000",
         "town": {
           "name": "SPB-CENTER",
-          "x": 10,
-          "y": 20
+          "x": 111,
+          "y": 111
         }
       },
       "postalAddress": {
-        "zipCode": "190000",
+        "zipCode": "190010",
         "town": {
-          "name": "SPB-CENTER",
-          "x": 10,
-          "y": 20
+          "name": "SPB-POST",
+          "x": 111,
+          "y": 111
         }
       }
     },
-    "price": 2099,
-    "manufactureCost": 355,
-    "rating": 11,
-    "partNumber": "ACM-B-4002",
+    "price": 2499,
+    "manufactureCost": 700,
+    "rating": 8,
+    "partNumber": "U1-B-1002",
     "owner": {
       "name": "LEE",
       "nationality": "CHINA",
-      "eyeColor": "WHITE",
-      "hairColor": "BROWN",
-      "height": 168.0,
+      "eyeColor": "BROWN",
+      "hairColor": "BLACK",
+      "height": 168,
       "location": {
         "name": "MSK-NORTH",
-        "x": 30,
-        "y": 40
+        "x": 111,
+        "y": 111
       }
     }
   }

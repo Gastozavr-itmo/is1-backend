@@ -58,22 +58,6 @@ public class OrganizationService {
 
 
 
-    @Retryable(
-            retryFor = {
-                    CannotSerializeTransactionException.class,
-                    CannotAcquireLockException.class,
-                    DeadlockLoserDataAccessException.class,
-                    TransactionSystemException.class,
-                    OptimisticLockException.class
-            },
-            noRetryFor = {
-                    IllegalArgumentException.class,
-                    org.hibernate.exception.ConstraintViolationException.class,
-                    org.springframework.dao.DataIntegrityViolationException.class
-            },
-            maxAttempts = 5,
-            backoff = @Backoff(delay = 20)
-    )
     @Transactional(isolation = SERIALIZABLE)
     public Integer create(OrganizationCreateDTO dto) {
         Organization o = mapper.toEntity(dto);
@@ -83,22 +67,6 @@ public class OrganizationService {
         return id;
     }
 
-    @Retryable(
-            retryFor = {
-                    CannotSerializeTransactionException.class,
-                    CannotAcquireLockException.class,
-                    DeadlockLoserDataAccessException.class,
-                    TransactionSystemException.class,
-                    OptimisticLockException.class
-            },
-            noRetryFor = {
-                    IllegalArgumentException.class,
-                    org.hibernate.exception.ConstraintViolationException.class,
-                    org.springframework.dao.DataIntegrityViolationException.class
-            },
-            maxAttempts = 5,
-            backoff = @Backoff(delay = 20)
-    )
     @Transactional(isolation = SERIALIZABLE)
     public void update(Integer id, OrganizationCreateDTO dto) {
         Organization o = mapper.toEntity(dto);
@@ -108,22 +76,6 @@ public class OrganizationService {
         changes.broadcast("organization", "updated", id);
     }
 
-    @Retryable(
-            retryFor = {
-                    CannotSerializeTransactionException.class,
-                    CannotAcquireLockException.class,
-                    DeadlockLoserDataAccessException.class,
-                    TransactionSystemException.class,
-                    OptimisticLockException.class
-            },
-            noRetryFor = {
-                    IllegalArgumentException.class,
-                    org.hibernate.exception.ConstraintViolationException.class,
-                    org.springframework.dao.DataIntegrityViolationException.class
-            },
-            maxAttempts = 5,
-            backoff = @Backoff(delay = 20)
-    )
     @Transactional(isolation = SERIALIZABLE)
     public void delete(Integer id) {
         var e = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Organization not found"));

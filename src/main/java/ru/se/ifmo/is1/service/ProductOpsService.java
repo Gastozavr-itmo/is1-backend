@@ -29,15 +29,6 @@ public class ProductOpsService {
 
     private final ChangePublisher changesBroadcaster;
 
-    @Retryable(
-            retryFor = {
-                    TransactionSystemException.class,
-                    OptimisticLockException.class
-            },
-            noRetryFor = IllegalArgumentException.class,
-            maxAttempts = 5,
-            backoff = @Backoff(delay = 20)
-    )
     @Transactional(isolation = SERIALIZABLE)
     public Long deleteOneByRating(Number rating){
         Long id = repo.deleteOneByRating(rating);

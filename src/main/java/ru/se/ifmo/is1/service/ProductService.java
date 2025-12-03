@@ -52,23 +52,6 @@ public class ProductService {
         return PageResponseDTO.of(items, page, size, total, sort, dir);
     }
 
-
-    @Retryable(
-            retryFor = {
-                    CannotSerializeTransactionException.class,
-                    CannotAcquireLockException.class,
-                    DeadlockLoserDataAccessException.class,
-                    TransactionSystemException.class,
-                    OptimisticLockException.class
-            },
-            noRetryFor = {
-                    IllegalArgumentException.class,
-                    org.hibernate.exception.ConstraintViolationException.class,
-                    org.springframework.dao.DataIntegrityViolationException.class
-            },
-            maxAttempts = 5,
-            backoff = @Backoff(delay = 20)
-    )
     @Transactional(isolation = SERIALIZABLE)
     public Long create(ProductCreateDTO dto) {
         Product p = mapper.toEntity(dto);
@@ -97,22 +80,6 @@ public class ProductService {
         return id;
     }
 
-    @Retryable(
-            retryFor = {
-                    CannotSerializeTransactionException.class,
-                    CannotAcquireLockException.class,
-                    DeadlockLoserDataAccessException.class,
-                    TransactionSystemException.class,
-                    OptimisticLockException.class
-            },
-            noRetryFor = {
-                    IllegalArgumentException.class,
-                    org.hibernate.exception.ConstraintViolationException.class,
-                    org.springframework.dao.DataIntegrityViolationException.class
-            },
-            maxAttempts = 5,
-            backoff = @Backoff(delay = 20)
-    )
     @Transactional(isolation = SERIALIZABLE)
     public void update(Long id, ProductCreateDTO dto) {
         Product p = mapper.toEntity(dto);
@@ -122,22 +89,6 @@ public class ProductService {
         changes.broadcast("product", "updated", id);
     }
 
-    @Retryable(
-            retryFor = {
-                    CannotSerializeTransactionException.class,
-                    CannotAcquireLockException.class,
-                    DeadlockLoserDataAccessException.class,
-                    TransactionSystemException.class,
-                    OptimisticLockException.class
-            },
-            noRetryFor = {
-                    IllegalArgumentException.class,
-                    org.hibernate.exception.ConstraintViolationException.class,
-                    org.springframework.dao.DataIntegrityViolationException.class
-            },
-            maxAttempts = 5,
-            backoff = @Backoff(delay = 20)
-    )
     @Transactional(isolation = SERIALIZABLE)
     public void delete(Long id) {
         var e = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Product not found"));
