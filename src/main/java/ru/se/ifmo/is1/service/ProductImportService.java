@@ -45,26 +45,17 @@ public class ProductImportService {
     private record PendingEvent(String entity, String action, Supplier<Long> id) {
     }
 
-    /**
-     * Основной импорт. При успешном коммите пишем запись успеха.
-     * При любом откате (Exception, 40001, 23505 и т.п.) пишем запись провала.
-     */
     @Transactional(rollbackFor = Exception.class, isolation = SERIALIZABLE)
     public ImportResponse importAllTransactional(List<ProductImportDTO> items) {
         final LocalDateTime startedAt = LocalDateTime.now();
 
-        // счётчик созданных продуктов
         final AtomicInteger created = new AtomicInteger(0);
-        // события для вебсокета
         final List<PendingEvent> events = new ArrayList<>();
-        // сюда сложим причину ошибки, если она случится
         final AtomicReference<Throwable> errorRef = new AtomicReference<>();
 
-        // Регистрируем синхронизацию сразу, чтобы отработать и коммит, и роллбэк
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                // выполняется только при УСПЕШНОМ коммите транзакции
                 List<PendingEvent> safeEvents = List.copyOf(events);
                 int createdFinal = created.get();
 
@@ -93,7 +84,6 @@ public class ProductImportService {
 
             for (ProductImportDTO dto : items) {
 
-                // ==== MANUFACTURER (Organization) ====
                 if (dto.getManufacturer() == null) {
                     throw new IllegalArgumentException("manufacturer is required");
                 }
@@ -106,7 +96,6 @@ public class ProductImportService {
 
                 Organization org = orgCache.get(orgKeyNorm);
                 if (org == null) {
-                    // пробуем найти существующую организацию по бизнес-ключу
                     org = orgRepo.findByFullNameNormalized(orgKeyNorm);
 
                     if (org == null) {
@@ -128,7 +117,7 @@ public class ProductImportService {
                     orgCache.put(orgKeyNorm, org);
                 }
 
-                // ==== OWNER (Person) ====
+
                 Person owner = null;
                 if (dto.getOwner() != null) {
                     var ownerLoc = mapper.toNullableLocation(dto.getOwner().getLocation());
@@ -138,10 +127,8 @@ public class ProductImportService {
 
                     String ownerKeyNorm = NormalizationUtil.canonicalKey(ownerTmp.getName(), true);
 
-                    // сначала смотрим в локальный кэш
                     owner = personCache.get(ownerKeyNorm);
                     if (owner == null) {
-                        // затем в БД
                         Person existingOwner = personRepo.findByBusinessKey(ownerKeyNorm);
                         if (existingOwner != null) {
                             owner = existingOwner;
@@ -160,7 +147,6 @@ public class ProductImportService {
                     }
                 }
 
-                // ==== PRODUCT ====
                 var coords = mapper.toCoordinates(dto.getCoordinates());
                 var product = mapper.toProduct(dto, org, owner, coords);
 
@@ -168,10 +154,8 @@ public class ProductImportService {
 
                 String partNumberNorm = NormalizationUtil.canonicalPartNumber(product.getPartNumber());
 
-                // Бизнес-ключ продукта в рамках импорта (производитель + нормализованный partNumber)
                 String productKey = orgKeyNorm + "#" + partNumberNorm;
 
-                // 1) Проверяем, что внутри ОДНОГО импорта мы уже не встречали такой продукт
                 if (!productKeysInBatch.add(productKey)) {
                     throw new IllegalStateException(
                             "Product with partNumber '" + product.getPartNumber() +
@@ -179,17 +163,14 @@ public class ProductImportService {
                                     "' appears more than once in import batch");
                 }
 
-                // 2) Проверяем существование в БД
                 Product existingProduct = productRepo.findByBusinessKey(org, partNumberNorm);
                 if (existingProduct != null) {
-                    // продукт уже существует в системе → считаем это ошибкой
                     throw new IllegalStateException(
                             "Product with partNumber '" + product.getPartNumber() +
                                     "' for manufacturer '" + org.getFullName() +
                                     "' already exists (id=" + existingProduct.getId() + ")");
                 }
 
-                // если до сюда дошли — продукт точно новый
                 s().persist(product);
                 created.incrementAndGet();
 
@@ -201,12 +182,10 @@ public class ProductImportService {
                 ));
             }
 
-            // Явный flush, чтобы все ошибки БД (уникальные индексы и т.п.) вылезли до afterCommit/afterCompletion
             s().flush();
 
             return ImportResponse.ok(created.get());
         } catch (Throwable ex) {
-            // запоминаем причину, чтобы afterCompletion смог записать её в историю
             errorRef.set(ex);
             throw ex;
         }

@@ -1,12 +1,8 @@
 package ru.se.ifmo.is1.service;
 
-import jakarta.persistence.OptimisticLockException;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
-import org.springframework.transaction.TransactionSystemException;
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.se.ifmo.is1.dto.ops.ManufactureCostGroupDTO;
 import ru.se.ifmo.is1.dto.paging.PageRequestDTO;
 import ru.se.ifmo.is1.dto.paging.PageResponseDTO;

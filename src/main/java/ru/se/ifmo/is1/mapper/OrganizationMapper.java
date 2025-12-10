@@ -42,51 +42,32 @@ public class OrganizationMapper {
     public OrganizationViewDTO toView(Organization o) {
         if (o == null) return null;
 
-        AddressDTO officialAddressDto = null;
-        if (o.getOfficialAddress() != null) {
-            var a = o.getOfficialAddress();
-            LocationDTO townDto = null;
-            if (a.getTown() != null) {
-                var t = a.getTown();
-                townDto = LocationDTO.builder()
-                        .x(t.getX())
-                        .y(t.getY())
-                        .name(t.getName())
-                        .build();
-            }
-            officialAddressDto = AddressDTO.builder()
-                    .zipCode(a.getZipCode())
-                    .town(townDto)
-                    .build();
-        }
-
-        AddressDTO postalAddressDto = null;
-        if (o.getPostalAddress() != null) {
-            var a = o.getPostalAddress();
-            LocationDTO townDto = null;
-            if (a.getTown() != null) {
-                var t = a.getTown();
-                townDto = LocationDTO.builder()
-                        .x(t.getX())
-                        .y(t.getY())
-                        .name(t.getName())
-                        .build();
-            }
-            postalAddressDto = AddressDTO.builder()
-                    .zipCode(a.getZipCode())
-                    .town(townDto)
-                    .build();
-        }
-
         return OrganizationViewDTO.builder()
                 .id(o.getId())
                 .name(o.getName())
-                .officialAddress(officialAddressDto)
-                .postalAddress(postalAddressDto)
+                .officialAddress(toAddressDTO(o.getOfficialAddress()))
+                .postalAddress(toAddressDTO(o.getPostalAddress()))
                 .annualTurnover(o.getAnnualTurnover())
                 .employeesCount(o.getEmployeesCount())
                 .fullName(o.getFullName())
                 .rating(o.getRating())
+                .build();
+    }
+
+    private AddressDTO toAddressDTO(Address a) {
+        if (a == null) return null;
+        return AddressDTO.builder()
+                .zipCode(a.getZipCode())
+                .town(toLocationDTO(a.getTown()))
+                .build();
+    }
+
+    private LocationDTO toLocationDTO(Location t) {
+        if (t == null) return null;
+        return LocationDTO.builder()
+                .x(t.getX())
+                .y(t.getY())
+                .name(t.getName())
                 .build();
     }
 }

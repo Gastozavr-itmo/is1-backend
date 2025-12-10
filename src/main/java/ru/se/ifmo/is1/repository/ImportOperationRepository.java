@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 import ru.se.ifmo.is1.model.ImportOperation;
 
 import java.util.List;
@@ -20,31 +19,20 @@ public class ImportOperationRepository {
         return sessionFactory.getCurrentSession();
     }
 
-    @Transactional
     public void save(ImportOperation op) {
         s().persist(op);
     }
 
-    @Transactional(readOnly = true)
     public ImportOperation findById(Long id) {
         return s().get(ImportOperation.class, id);
     }
 
-    @Transactional(readOnly = true)
-    public List<ImportOperation> findAll() {
-        return s().createQuery(
-                        "select io from ImportOperation io order by io.id desc", ImportOperation.class)
-                .list();
-    }
-
-    @Transactional(readOnly = true)
     public long countAll() {
         Long cnt = s().createQuery("select count(io.id) from ImportOperation io", Long.class)
                 .uniqueResult();
         return cnt == null ? 0L : cnt;
     }
 
-    @Transactional(readOnly = true)
     public List<ImportOperation> findPage(int page, int size, String sort, String dir) {
         int p = Math.max(page, 0);
         int s = Math.max(size, 1);

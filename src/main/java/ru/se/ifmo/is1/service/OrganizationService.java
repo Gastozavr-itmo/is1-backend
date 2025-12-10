@@ -1,18 +1,10 @@
 package ru.se.ifmo.is1.service;
 
-import jakarta.persistence.OptimisticLockException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.CannotAcquireLockException;
-import org.springframework.dao.CannotSerializeTransactionException;
-import org.springframework.dao.DeadlockLoserDataAccessException;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.annotation.Transactional;
 import ru.se.ifmo.is1.dto.organization.OrganizationCreateDTO;
 import ru.se.ifmo.is1.dto.organization.OrganizationViewDTO;
-
 import ru.se.ifmo.is1.dto.paging.PageResponseDTO;
 import ru.se.ifmo.is1.mapper.OrganizationMapper;
 import ru.se.ifmo.is1.model.Address;

@@ -13,12 +13,11 @@ import java.util.List;
 @Data
 public class ExceptionResponse {
 
-    int status;                     // HTTP статус (числом)
-    String error;                   // краткое имя статуса: "Bad Request", "Conflict", ...
-    String message;                 // основное сообщение для пользователя
-    String path;                    // URI запроса
-    Instant timestamp;              // когда произошло
+    int status;
+    String error;
+    String message;
+    String path;
+    Instant timestamp;
 
-    // Детализация по полям (для валидации, импортов и т.п.)
     List<ValidationError> details;
 }

@@ -1,15 +1,9 @@
 package ru.se.ifmo.is1.mapper;
 
 import org.springframework.stereotype.Component;
-
-// ==== Импортные/CRUD DTO ====
 import ru.se.ifmo.is1.dto.imports.OrganizationImportDTO;
 import ru.se.ifmo.is1.dto.imports.PersonImportDTO;
 import ru.se.ifmo.is1.dto.imports.ProductImportDTO;
-
-import ru.se.ifmo.is1.dto.organization.OrganizationCreateDTO;
-import ru.se.ifmo.is1.dto.person.PersonCreateDTO;
-
 import ru.se.ifmo.is1.dto.shared.AddressDTO;
 import ru.se.ifmo.is1.dto.shared.CoordinatesDTO;
 import ru.se.ifmo.is1.dto.shared.LocationDTO;
@@ -119,19 +113,6 @@ public class ImportMapper {
         return e;
     }
 
-    public Organization toOrganization(OrganizationCreateDTO dto, Address official, Address postal) {
-        if (dto == null) return null;
-        Organization e = new Organization();
-        e.setName(dto.getName());
-        e.setFullName(dto.getFullName());
-        e.setAnnualTurnover(dto.getAnnualTurnover());
-        e.setEmployeesCount(dto.getEmployeesCount());
-        e.setRating(dto.getRating());
-        e.setOfficialAddress(official);
-        e.setPostalAddress(postal);
-        return e;
-    }
-
     public Person toNullablePerson(PersonImportDTO dto, Location location) {
         if (dto == null) return null;
         Person e = new Person();
@@ -150,18 +131,6 @@ public class ImportMapper {
         e.setEyeColor(dto.getEyeColor() == null ? null : Color.valueOf(dto.getEyeColor().toUpperCase()));
         e.setHairColor(dto.getHairColor() == null ? null : Color.valueOf(dto.getHairColor().toUpperCase()));
         e.setNationality(dto.getNationality() == null ? null : Country.valueOf(dto.getNationality().toUpperCase()));
-        return e;
-    }
-
-    public Person toNullablePerson(PersonCreateDTO dto, Location location) {
-        if (dto == null) return null;
-        Person e = new Person();
-        e.setName(dto.getName());
-        e.setLocation(location);
-        e.setHeight(dto.getHeight());
-        e.setEyeColor(dto.getEyeColor());
-        e.setHairColor(dto.getHairColor());
-        e.setNationality(dto.getNationality());
         return e;
     }
 

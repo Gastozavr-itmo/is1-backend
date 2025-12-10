@@ -36,7 +36,7 @@ public class OrganizationController {
             @RequestParam(value = "postalTownName", required = false) String postalTownName
     ) {
         var resp = service.list(page, size, sort, dir, name, fullName, officialTownName, postalTownName);
-        return org.springframework.http.ResponseEntity.ok(resp);
+        return ResponseEntity.ok(resp);
     }
 
 

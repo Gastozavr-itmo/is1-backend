@@ -25,7 +25,7 @@ import java.util.List;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // ===== 400 — бизнес-валидация (твоя логика) =====
+    // ===== 400 — бизнес-валидация =====
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
     public ResponseEntity<ExceptionResponse> handleBadRequest(RuntimeException ex,
                                                               HttpServletRequest request) {
@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, msg, request, details);
     }
 
-    // ===== 400 — @Valid на DTO (RequestBody / ModelAttribute) =====
+    // ===== 400 — @Valid на DTO =====
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ExceptionResponse> handleMethodArgNotValid(MethodArgumentNotValidException ex,
@@ -56,7 +56,7 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, "Validation failed", request, details);
     }
 
-    // ===== 400 — Bean Validation на сущностях (внутри транзакции) =====
+    // ===== 400 — Bean Validation на сущностях =====
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ExceptionResponse> handleConstraintViolation(ConstraintViolationException ex,
@@ -73,11 +73,7 @@ public class GlobalExceptionHandler {
     }
 
     // ===== 409 — транзакция откатилась из-за целостности БД =====
-    //
-    // Ловим:
-    //  - TransactionSystemException / UnexpectedRollbackException (как в WildFly)
-    //  - прямой DataIntegrityViolationException, если Spring его кинул сразу
-    //
+
     @ExceptionHandler({
             TransactionSystemException.class,
             UnexpectedRollbackException.class,
@@ -88,12 +84,10 @@ public class GlobalExceptionHandler {
 
         Throwable root = rootCause(ex);
 
-        // Если это Bean Validation — отдаём как 400 "Validation failed"
         if (root instanceof ConstraintViolationException cve) {
             return buildFromConstraintViolation(cve, request);
         }
 
-        // Пробуем достать SQL-исключение
         SQLException sqlEx = extractSQLException(root);
 
         String message = "Транзакция отменена. Изменения не были сохранены.";
@@ -101,9 +95,8 @@ public class GlobalExceptionHandler {
 
         if (sqlEx != null) {
             String sqlState = sqlEx.getSQLState();
-            String sqlMsg   = sqlEx.getMessage();
+            String sqlMsg = sqlEx.getMessage();
 
-            // 23503 — FK violation: попытка удалить/обновить объект, на который есть ссылки
             if ("23503".equals(sqlState)) {
                 if (sqlMsg != null && sqlMsg.contains("product_owner_id_fkey")) {
                     message = "Невозможно удалить владельца: на него ссылаются продукты. Транзакция отменена.";
@@ -113,11 +106,11 @@ public class GlobalExceptionHandler {
                     message = "Невозможно удалить или изменить объект: он используется в других записях. Транзакция отменена.";
                 }
             }
-            // 23505 — UNIQUE violation
+
             else if ("23505".equals(sqlState)) {
                 message = "Объект с таким уникальным значением уже существует. Транзакция отменена.";
             }
-            // 23502 — NOT NULL violation
+
             else if ("23502".equals(sqlState)) {
                 message = "Не заполнено обязательное поле. Транзакция отменена.";
             }
@@ -127,7 +120,7 @@ public class GlobalExceptionHandler {
         return build(status, message, request, details);
     }
 
-    // ===== 500 — прочие ошибки БД (соединение и т.п.) =====
+    // ===== 500 — прочие ошибки БД =====
 
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<ExceptionResponse> handleDataAccess(DataAccessException ex,
@@ -142,8 +135,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ExceptionResponse> handleInternal(Exception ex,
                                                             HttpServletRequest request) {
-        ex.printStackTrace(); // позже заменишь на логгер
-
+        ex.printStackTrace();
         String message = "Internal server error. Transaction may have been rolled back.";
         return build(HttpStatus.INTERNAL_SERVER_ERROR, message, request, List.of());
     }

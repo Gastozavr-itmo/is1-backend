@@ -14,7 +14,6 @@ import ru.se.ifmo.is1.repository.ImportOperationRepository;
 import ru.se.ifmo.is1.ws.ChangePublisher;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 import static org.springframework.transaction.annotation.Isolation.SERIALIZABLE;
 
@@ -23,11 +22,6 @@ import static org.springframework.transaction.annotation.Isolation.SERIALIZABLE;
 public class ImportHistoryService {
     private final ImportOperationRepository repo;
     private final ChangePublisher changes;
-
-    @Transactional(readOnly = true)
-    public List<ImportOperation> list() {
-        return repo.findAll();
-    }
 
     @Transactional(readOnly = true)
     public PageResponseDTO<ImportOperationDTO> list(int page, int size, String sort, String dir) {

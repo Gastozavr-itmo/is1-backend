@@ -103,14 +103,14 @@
           </elementProp>
         </HTTPSamplerProxy>
         <hashTree>
-          <JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="Person id extractor" enabled="true">
+          <JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="Person id extractor">
             <stringProp name="JSONPostProcessor.referenceNames">randomPersonId</stringProp>
             <stringProp name="JSONPostProcessor.jsonPathExprs">$</stringProp>
             <stringProp name="JSONPostProcessor.match_numbers">1</stringProp>
           </JSONPostProcessor>
           <hashTree/>
         </hashTree>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Create random organization">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Create random organization" enabled="true">
           <stringProp name="HTTPSampler.path">${BASE_PATH}/organization</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">POST</stringProp>
@@ -149,14 +149,14 @@
           </elementProp>
         </HTTPSamplerProxy>
         <hashTree>
-          <JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="Organization id extractor">
+          <JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="Organization id extractor" enabled="true">
             <stringProp name="JSONPostProcessor.referenceNames">randomOrganizationId</stringProp>
             <stringProp name="JSONPostProcessor.jsonPathExprs">$</stringProp>
             <stringProp name="JSONPostProcessor.match_numbers"></stringProp>
           </JSONPostProcessor>
           <hashTree/>
         </hashTree>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Create random product">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Create random product" enabled="true">
           <stringProp name="HTTPSampler.path">${BASE_PATH}/product</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">POST</stringProp>
@@ -190,7 +190,7 @@
           </elementProp>
         </HTTPSamplerProxy>
         <hashTree>
-          <JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="Product id extractor">
+          <JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="Product id extractor" enabled="true">
             <stringProp name="JSONPostProcessor.referenceNames">randomProductId</stringProp>
             <stringProp name="JSONPostProcessor.jsonPathExprs">$</stringProp>
             <stringProp name="JSONPostProcessor.match_numbers"></stringProp>
@@ -353,7 +353,7 @@
           </elementProp>
         </HTTPSamplerProxy>
         <hashTree/>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Delete random organization">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Delete random organization" enabled="true">
           <stringProp name="HTTPSampler.path">${BASE_PATH}/organization/${randomOrganizationId}</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">DELETE</stringProp>
@@ -364,7 +364,7 @@
           </elementProp>
         </HTTPSamplerProxy>
         <hashTree/>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Create same person">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Create same person" enabled="true">
           <stringProp name="HTTPSampler.path">${BASE_PATH}/person</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">POST</stringProp>
@@ -392,7 +392,7 @@
           </elementProp>
         </HTTPSamplerProxy>
         <hashTree/>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Get same person">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Get same person" enabled="true">
           <stringProp name="HTTPSampler.path">${BASE_PATH}/person?name=SamePersonName </stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">GET</stringProp>
@@ -410,7 +410,7 @@
           </JSONPostProcessor>
           <hashTree/>
         </hashTree>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Create same organization">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Create same organization" enabled="true">
           <stringProp name="HTTPSampler.path">${BASE_PATH}/organization</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">POST</stringProp>
@@ -653,7 +653,7 @@
           </elementProp>
         </HTTPSamplerProxy>
         <hashTree/>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Import same json" enabled="false">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Import same json">
           <stringProp name="HTTPSampler.path">${BASE_PATH}/import/product/upload</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">POST</stringProp>
@@ -674,7 +674,7 @@
           </elementProp>
         </HTTPSamplerProxy>
         <hashTree/>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Import different json">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Import different json" enabled="true">
           <stringProp name="HTTPSampler.path">${BASE_PATH}/import/product/upload</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <stringProp name="HTTPSampler.method">POST</stringProp>

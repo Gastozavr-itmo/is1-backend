@@ -35,28 +35,6 @@ public class OrganizationRepository {
         s().remove(e);
     }
 
-    public Organization findByBusinessKey(String fullNameRaw) {
-        if (fullNameRaw == null || fullNameRaw.isBlank()) return null;
-        String norm = normalizeFullName(fullNameRaw);
-        return s().createQuery("""
-                        select o from Organization o
-                        where lower(trim(o.fullName)) = :fn
-                        """, Organization.class)
-                .setParameter("fn", norm)
-                .setMaxResults(1)
-                .uniqueResult();
-    }
-
-    public Organization findByFullNameExact(String fullName) {
-        return s().createQuery("""
-                        select o from Organization o
-                        where o.fullName = :fn
-                        """, Organization.class)
-                .setParameter("fn", fullName)
-                .setMaxResults(1)
-                .uniqueResult();
-    }
-
     public Organization findByFullNameNormalized(String normalizedLower) {
         return s().createQuery("""
                         select o from Organization o
@@ -65,10 +43,6 @@ public class OrganizationRepository {
                 .setParameter("norm", normalizedLower)
                 .setMaxResults(1)
                 .uniqueResult();
-    }
-
-    private static String normalizeFullName(String s) {
-        return s == null ? null : s.trim().toLowerCase(Locale.ROOT);
     }
 
     private static final Map<String, SortSupport.Rule> SORT = new LinkedHashMap<>();
